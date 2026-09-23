@@ -30,7 +30,7 @@ def engine():
             connection.execute(text(f'CREATE SCHEMA "{schema}"'))
         result = create_engine(url, connect_args={"options": f"-csearch_path={schema}"})
     else:
-        result = create_engine("sqlite://", poolclass=StaticPool)
+        result = create_engine("sqlite://", poolclass=StaticPool, connect_args={"check_same_thread": False})
 
         @event.listens_for(result, "connect")
         def enable_foreign_keys(dbapi_connection, _):

@@ -49,3 +49,10 @@
 
 @media (max-width: 1050px) { .intro-row { flex-direction: column; align-items: stretch; }.hero-visual { flex-direction: row; justify-content: center; flex-wrap: wrap; } }
 @media (max-width: 380px) { .baiterek-orbit { margin-inline: -12px; }.orbit-ray { font-size: 10px; padding-inline: 7px; } }
+/* Match the server-backed scenario controls to the Astana palette. */
+select, input { background: #fff; border-color: #b9dce2; color: #173c51; }
+.secondary-action { background: #e8f5fc; border: 1px solid #b9dce2; color: #087eaf; border-radius: 4px; }
+.save-state, .loading-message, .effect-details, .results-panel > p, .contributions, td small { color: #53768a; }
+button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline-color: var(--astana-blue); }
+.orbit-score strong { font-size: 27px; }
+.initiative-card { min-width: 0; }

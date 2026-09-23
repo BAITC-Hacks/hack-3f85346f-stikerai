@@ -4,7 +4,7 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import (
     JSON, BigInteger, CheckConstraint, DateTime, Enum, Float, ForeignKey,
-    ForeignKeyConstraint, Integer, MetaData, String, Text, UniqueConstraint, Uuid, func,
+    ForeignKeyConstraint, Index, Integer, MetaData, String, Text, UniqueConstraint, Uuid, func,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -122,8 +122,12 @@ class Scenario(Identity, Base):
     team_name: Mapped[str] = mapped_column(String(120))
     status: Mapped[ScenarioStatus] = mapped_column(enum_type(ScenarioStatus, "scenario_status"), default=ScenarioStatus.DRAFT)
     submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    owner_hash: Mapped[str | None] = mapped_column(String(64), index=True)
+    request_id: Mapped[UUID | None] = mapped_column(Uuid)
+    revision: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     __table_args__ = (
         UniqueConstraint("id", "dataset_id"),
+        Index("uq_scenarios_owner_request", "owner_hash", "request_id", unique=True),
         CheckConstraint("(status = 'draft' AND submitted_at IS NULL) OR "
                         "(status IN ('submitted', 'evaluated') AND submitted_at IS NOT NULL)", name="submission_state"),
     )
@@ -176,3 +180,22 @@ class DistrictResult(Indicators, Base):
         ForeignKeyConstraint(["district_id", "dataset_id"], ["districts.id", "districts.dataset_id"]),
         *indicator_checks(),
     )
+
+
+class Calculation(Identity, Base):
+    __tablename__ = "calculations"
+    scenario_id: Mapped[UUID] = mapped_column(ForeignKey("scenarios.id"), unique=True)
+    payload: Mapped[dict] = mapped_column(JSON)
+
+
+class Explanation(Identity, Base):
+    __tablename__ = "explanations"
+    calculation_id: Mapped[UUID] = mapped_column(ForeignKey("calculations.id"), unique=True)
+    status: Mapped[str] = mapped_column(String(16), default="pending")
+    payload: Mapped[dict | None] = mapped_column(JSON)
+    error: Mapped[str | None] = mapped_column(Text)
+    model: Mapped[str | None] = mapped_column(String(200))
+    prompt_version: Mapped[str] = mapped_column(String(64), default="city-explanation-v1")
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    attempt_id: Mapped[UUID | None] = mapped_column(Uuid)
+    __table_args__ = (CheckConstraint("status IN ('pending', 'running', 'completed', 'failed')", name="status_values"),)
