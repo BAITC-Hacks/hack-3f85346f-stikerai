@@ -8,15 +8,36 @@ Astana districts and see where their decisions are targeted. The existing
 measured values below district level. The grid is therefore a visual
 subdivision of district areas, not a new source of finer-grained indicators.
 
-The current frontend is still a connection-check placeholder. This plan defines
-the map data contract for the future scenario and evaluation screens; it does
-not assume that a map UI already exists.
+The current branch now includes a dashboard, but it still uses placeholder
+initiative costs/impacts and three hard-coded district scores; it has no map.
+Treat it as a visual shell until it is connected to the simulator data and
+scoring API.
+
+## Boundary research gate (2026-09-23)
+
+The source audit in [`docs/enrichment/boundaries/README.md`](docs/enrichment/boundaries/README.md)
+found that official city material describes six current districts, including
+Sarayshyq, while `astana-synthetic-v1` has five legacy synthetic district
+profiles. Almaty appears to have been split/reorganized. The public geoportal
+does not expose a verified, reusable geometry export or the baseline boundary
+vintage, and the current five-to-six district crosswalk is unresolved.
+
+**Do not ship or draw district choropleth/grid geometry joined to the five
+synthetic scores until an authoritative historical boundary version or an
+explicit reviewed aggregation rule is obtained.** Do not equate current
+Almaty with the old synthetic `almaty` row or merge Sarayshyq into it based on
+name alone. No real district geometry is bundled by this plan today.
+
+The plan below is the target once boundary source, date, license, and crosswalk
+are approved. Until then, keep map implementation behind that data gate and
+show the five district names/scores only in a truthful non-geographic list.
 
 ## Recommended first version
 
 - Use the five district polygons as the authoritative units for selection,
   statistics, and reporting.
-- Generate a **500 m square grid**, clipped to Astana's city boundary and
+- After the boundary gate passes, generate a **500 m square grid**, clipped to
+  the approved modeled city/district boundary and
   assigned to a district by the cell centroid. This is enough visual detail to
   give the map texture without presenting each cell as an independently
   measured neighborhood.
@@ -33,18 +54,21 @@ Cell size is a display choice, not the resolution of the underlying data.
 
 ## QGIS preparation
 
-1. Obtain a district-boundary layer for Astana with a source, date, and license
-   recorded in the project. Confirm that the boundary names/codes match the
-   dataset codes: `esil`, `almaty`, `saryarka`, `baikonur`, and `nura`.
+1. Obtain an authoritative boundary layer whose vintage represents the
+   simulator's five modeled district units, or receive approval for a new
+   explicit five-to-six district aggregation and new dataset version. Record
+   source, date, IDs, CRS, and reuse license. Confirm the codes
+   `esil`, `almaty`, `saryarka`, `baikonur`, and `nura` against a reviewed
+   crosswalk; current district names alone do not establish this match.
 2. Reproject boundaries to a suitable **projected metric CRS** before creating
    the grid. Record the CRS name and EPSG code in the export metadata; do not
    create a 500 m grid in latitude/longitude coordinates.
 3. Repair invalid geometries if needed, dissolve duplicate features by district
    code, and check for gaps/overlaps. Clip the five districts to the city
    boundary if the source includes areas outside the modeled city.
-4. Create a 500 m square polygon grid over the city extent. Clip it to the city
+4. Create a 500 m square polygon grid over the approved city extent. Clip it to the city
    boundary and join each cell to the district containing its centroid.
-5. Exclude cells whose centroid falls outside the five modeled districts. Keep
+5. Exclude cells whose centroid falls outside the approved modeled districts. Keep
    partial edge cells; their geometry is clipped and their parent district is
    still determined by the centroid.
 6. Join the grid to the district dataset using the stable district code. Add
@@ -124,8 +148,8 @@ district aggregates repeated over display cells.
 
 ## Deliverables and acceptance checks
 
-1. A QGIS project with documented source, license, CRS, processing steps, and
-   layer names.
+1. A QGIS project with documented source, license, boundary vintage/crosswalk,
+   CRS, processing steps, and layer names.
 2. `districts.geojson` and `grid_500m.geojson` (or equivalent versioned assets)
    with valid geometries and matching district codes.
 3. A UI map that lets users select one of the five districts and see the same
