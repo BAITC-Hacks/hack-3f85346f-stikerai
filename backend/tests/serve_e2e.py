@@ -22,6 +22,6 @@ if __name__ == "__main__":
         with Session(get_engine()) as session, session.begin():
             seed(session)
         try:
-            uvicorn.run("app.main:app", host="127.0.0.1", port=8001)
+            uvicorn.run("app.main:app", host="127.0.0.1", port=int(os.getenv("E2E_API_PORT", "8001")))
         finally:
             get_engine().dispose()

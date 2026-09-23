@@ -1,0 +1,44 @@
+[
+  {
+    "relation_id": 3479876,
+    "version": 35,
+    "relation_modified_at": "2026-04-27T06:11:19Z",
+    "download_url": "https://www.openstreetmap.org/api/0.6/relation/3479876/full.json",
+    "sha256": "d3247fe1472853bd5c81bc9b7ebe0df4eb4c2355a2ef8e1d709f0fbedc4270dc"
+  },
+  {
+    "relation_id": 3482819,
+    "version": 47,
+    "relation_modified_at": "2026-09-21T13:44:01Z",
+    "download_url": "https://www.openstreetmap.org/api/0.6/relation/3482819/full.json",
+    "sha256": "15d44eb3513733aeaa90e58f00af4e39fdb3bea64fb226f24d8c11a09db21f18"
+  },
+  {
+    "relation_id": 3486954,
+    "version": 23,
+    "relation_modified_at": "2025-12-22T05:45:06Z",
+    "download_url": "https://www.openstreetmap.org/api/0.6/relation/3486954/full.json",
+    "sha256": "0cbe0a8cf642cc6a8dbc04f602f79bce4def7073b60bb203d18e6c3323c9f644"
+  },
+  {
+    "relation_id": 8593081,
+    "version": 14,
+    "relation_modified_at": "2025-12-22T05:45:06Z",
+    "download_url": "https://www.openstreetmap.org/api/0.6/relation/8593081/full.json",
+    "sha256": "23379ce8de0f4c587255173da3a28dce27244ce20122ebb1bd510dfef9e79842"
+  },
+  {
+    "relation_id": 19733918,
+    "version": 17,
+    "relation_modified_at": "2026-09-21T13:44:01Z",
+    "download_url": "https://www.openstreetmap.org/api/0.6/relation/19733918/full.json",
+    "sha256": "c48dc7dc438b0ce2f7858f1fbcf748b7fa73610035acbff16d62fedf55d979e8"
+  },
+  {
+    "relation_id": 20593940,
+    "version": 1,
+    "relation_modified_at": "2026-04-27T06:11:19Z",
+    "download_url": "https://www.openstreetmap.org/api/0.6/relation/20593940/full.json",
+    "sha256": "f8a3a194771fc6f85cd3b2448a0b00d878e7d92732a74ef487fd61ee9ce10ded"
+  }
+]

@@ -37,6 +37,8 @@ test('citizen actions persist and appear in government signals without changing 
   await expect(page.getByRole('dialog')).toContainText('+₸5,000 demo support')
   await page.keyboard.press('Escape')
   await page.reload()
+  // Reload starts the lazy workspace and a fresh session/catalog request chain.
+  await expect(page.getByRole('status').filter({ hasText: /Loading Astana|Synchronizing your city/ })).toHaveCount(0, { timeout: 20000 })
   await expect(page.getByTestId('score')).toHaveText('52,56')
   await navigate(page, 'Petitions')
   await expect(page.locator('.petition-card').filter({ hasText: 'More frequent public transport in Nura' })).toContainText('2,487')

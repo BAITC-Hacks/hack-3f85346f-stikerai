@@ -3,6 +3,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.api.health import router as health_router
+from app.api.map import router as map_router
 from app.api.mirofish import router as mirofish_router
 from app.api.public_signals import router as public_signals_router
 from app.api.scenarios import router as scenarios_router
@@ -15,6 +16,7 @@ app.include_router(simulator_router, prefix="/api")
 app.include_router(public_signals_router, prefix="/api")
 app.include_router(mirofish_router, prefix="/api")
 app.include_router(scenarios_router, prefix="/api")
+app.include_router(map_router, prefix="/api")
 
 ERRORS = {
     "Budget exceeded": ("BUDGET_EXCEEDED", "Превышен бюджет сценария."),

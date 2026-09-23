@@ -1,3 +1,4 @@
+import { t, tr, locale } from './i18n'
 import { useCallback, useEffect, useState } from 'react'
 
 type BreakdownItem = { label: string; count: number; suppressed?: boolean }
@@ -15,7 +16,7 @@ type Proposal = {
 }
 
 const endpoint = '/api/signals/proposals'
-const numberFormat = new Intl.NumberFormat('ru-RU')
+const numberFormat = { format: (value: number) => new Intl.NumberFormat(locale()).format(value) }
 const stanceNames: Record<string, string> = {
   support: 'Поддержка', against: 'Против', neutral: 'Нейтрально', mixed: 'Смешанная',
   for: 'Поддержка', oppose: 'Против', opposition: 'Против', neutral_or_unclear: 'Нейтрально / неясно',
@@ -119,14 +120,14 @@ function formatDate(value?: string): string | undefined {
   if (!value) return undefined
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
-  return new Intl.DateTimeFormat('ru-RU', { dateStyle: 'medium', timeStyle: 'short' }).format(date)
+  return new Intl.DateTimeFormat(locale(), { dateStyle: 'medium', timeStyle: 'short' }).format(date)
 }
 
 function Breakdown({ title, items }: { title: string; items: BreakdownItem[] }) {
   return (
     <div className="public-signal-breakdown">
-      <h4>{title}</h4>
-      {items.length ? <ul>{items.map((item) => <li key={item.label}><span>{item.label}</span><b>{item.suppressed ? 'Подавлено' : numberFormat.format(item.count)}</b></li>)}</ul> : <p className="public-signal-empty-value">Нет данных</p>}
+      <h4>{t(title)}</h4>
+      {items.length ? <ul>{items.map((item) => <li key={t(item.label)}><span>{t(item.label)}</span><b>{item.suppressed ? t("Подавлено") : numberFormat.format(item.count)}</b></li>)}</ul> : <p className="public-signal-empty-value">{t("Нет данных")}</p>}
     </div>
   )
 }
@@ -171,38 +172,38 @@ export function PublicSignalsPanel() {
     <section className="public-signals-panel" aria-labelledby="public-signals-title">
       <div className="public-signals-heading">
         <div>
-          <span className="section-kicker">ОБЩЕСТВЕННОЕ УЧАСТИЕ · ДЕМО-СЛОЙ</span>
-          <h2 id="public-signals-title">Предложения жителей</h2>
-          <p>Сводка по темам, языкам и позиции в предложениях. Эти сигналы не входят в индекс качества жизни.</p>
+          <span className="section-kicker">{t("ОБЩЕСТВЕННОЕ УЧАСТИЕ · ДЕМО-СЛОЙ")}</span>
+          <h2 id="public-signals-title">{t("Предложения жителей")}</h2><small>{t("Тексты источников и AI-ответы показаны на языке оригинала.")}</small>
+          <p>{t("Сводка по темам, языкам и позиции в предложениях. Эти сигналы не входят в индекс качества жизни.")}</p>
         </div>
-        <button className="public-signals-refresh" type="button" onClick={() => void load()} disabled={state === 'loading'} aria-label="Обновить общественные сигналы">
-          {state === 'loading' ? 'Загрузка…' : 'Обновить ↻'}
+        <button className="public-signals-refresh" type="button" onClick={() => void load()} disabled={state === 'loading'} aria-label={t("Обновить общественные сигналы")}>
+          {state === 'loading' ? t("Загрузка…") : t("Обновить ↻")}
         </button>
       </div>
 
       <div className="public-signals-notice" role="note">
-        <strong>Синтетические демонстрационные данные</strong>
-        <span>Цифры созданы вручную для демо, это не данные жителей и не репрезентативный опрос. Они не влияют на индекс качества жизни.</span>
+        <strong>{t("Синтетические демонстрационные данные")}</strong>
+        <span>{t("Цифры созданы вручную для демо, это не данные жителей и не репрезентативный опрос. Они не влияют на индекс качества жизни.")}</span>
       </div>
 
-      {state === 'loading' && <p className="public-signals-state" role="status">Загружаем сводку предложений…</p>}
-      {state === 'error' && <div className="public-signals-state public-signals-error" role="status"><span>Сводка пока недоступна ({errorMessage}).</span><button type="button" onClick={() => void load()}>Повторить</button></div>}
-      {state === 'empty' && <p className="public-signals-state">Пока нет предложений для отображения.</p>}
+      {state === 'loading' && <p className="public-signals-state" role="status">{t("Загружаем сводку предложений…")}</p>}
+      {state === 'error' && <div className="public-signals-state public-signals-error" role="status"><span>{t("Сводка пока недоступна (")}{t(errorMessage)}).</span><button type="button" onClick={() => void load()}>{t("Повторить")}</button></div>}
+      {state === 'empty' && <p className="public-signals-state">{t("Пока нет предложений для отображения.")}</p>}
       {state === 'ready' && <>
-        <p className="public-signals-updated">{updatedAt ? `Обновлено: ${formatDate(updatedAt)}` : 'Демо-фикстуры · время сбора неприменимо'}</p>
+        <p className="public-signals-updated">{updatedAt ? tr`Обновлено: ${formatDate(updatedAt)}` : t("Демо-фикстуры · время сбора неприменимо")}</p>
         <div className="public-proposal-grid">
           {proposals.map((proposal) => <article className="public-proposal-card" key={proposal.id}>
             <div className="public-proposal-title"><span aria-hidden="true">◌</span><h3>{proposal.title}</h3></div>
             {proposal.summary && <p className="public-proposal-summary">{proposal.summary}</p>}
-            {proposal.updatedAt && <p className="public-proposal-updated">Сводка обновлена: {formatDate(proposal.updatedAt)}</p>}
+            {proposal.updatedAt && <p className="public-proposal-updated">{t("Сводка обновлена:")} {formatDate(proposal.updatedAt)}</p>}
             <div className="public-proposal-breakdowns">
-              <Breakdown title="Позиция" items={proposal.stances} />
-              <Breakdown title="Темы" items={proposal.topics} />
-              <Breakdown title="Языки" items={proposal.languages} />
+              <Breakdown title={t("Позиция")} items={proposal.stances} />
+              <Breakdown title={t("Темы")} items={proposal.topics} />
+              <Breakdown title={t("Языки")} items={proposal.languages} />
             </div>
             {(proposal.coverage.length > 0 || proposal.sources.length > 0) && <div className="public-proposal-meta">
-              {proposal.coverage.length > 0 && <div><h4>Охват данных</h4><ul>{proposal.coverage.map((item) => <li key={item}>{item}</li>)}</ul></div>}
-              {proposal.sources.length > 0 && <div><h4>Источники</h4><ul>{proposal.sources.map((source, index) => <li key={`${source.label}-${index}`}>{source.url ? <a href={source.url} target="_blank" rel="noreferrer">{source.label}<span className="sr-only"> (откроется в новой вкладке)</span></a> : source.label}</li>)}</ul></div>}
+              {proposal.coverage.length > 0 && <div><h4>{t("Охват данных")}</h4><ul>{proposal.coverage.map((item) => <li key={item}>{t(item)}</li>)}</ul></div>}
+              {proposal.sources.length > 0 && <div><h4>{t("Источники")}</h4><ul>{proposal.sources.map((source, index) => <li key={`${source.label}-${index}`}>{source.url ? <a href={source.url} target="_blank" rel="noreferrer">{t(source.label)}<span className="sr-only">  {t("(откроется в новой вкладке)")}</span></a> : t(source.label)}</li>)}</ul></div>}
             </div>}
           </article>)}
         </div>

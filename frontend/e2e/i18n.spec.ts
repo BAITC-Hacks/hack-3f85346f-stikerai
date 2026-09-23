@@ -1,0 +1,50 @@
+import { test, expect } from '@playwright/test'
+
+test.use({ locale: 'kk-KZ' })
+
+test('Russian default; switching preserves decisions and survives reload', async ({ page }) => {
+  await page.goto('/simulator')
+  await expect(page.locator('html')).toHaveAttribute('lang', 'ru')
+  await page.getByRole('button', { name: 'Начать сценарий', exact: true }).click()
+  const district = page.getByTestId('district-M7')
+  await district.selectOption({ label: 'Нура' })
+  await page.getByTestId('initiative-M7').click()
+  await expect(page.getByTestId('initiative-M7')).toHaveAttribute('aria-pressed', 'true')
+  const selectedDistrict = await district.inputValue()
+  const originalScore = await page.getByTestId('score').textContent()
+  await page.getByRole('button', { name: 'Қазақша', exact: true }).click()
+  await expect(page.locator('html')).toHaveAttribute('lang', 'kk')
+  await expect(page.getByRole('button', { name: 'Қазақша', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByTestId('initiative-M7')).toContainText('Мектеп + балабақша')
+  await expect(page.getByTestId('initiative-M7')).toHaveAttribute('aria-pressed', 'true')
+  await expect(district).toHaveValue(selectedDistrict)
+  await expect(page.getByRole('button', { name: 'Картаны ашу', exact: true })).toBeVisible()
+  await page.reload()
+  await expect(page.locator('html')).toHaveAttribute('lang', 'kk')
+  await expect(page.getByTestId('initiative-M7')).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('button', { name: 'Русский', exact: true }).click()
+  await expect(page.locator('html')).toHaveAttribute('lang', 'ru')
+  await expect(page.getByTestId('score')).toHaveText(originalScore!)
+  await expect(page.getByTestId('district-M7')).toHaveValue(selectedDistrict)
+})
+
+test('unsupported stored language falls back to Russian and switch works on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.addInitScript(() => localStorage.setItem('stikerai.language', 'en'))
+  await page.goto('/simulator')
+  await expect(page.locator('html')).toHaveAttribute('lang', 'ru')
+  await page.getByRole('button', { name: 'Қазақша', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Сценарийді бастау', exact: true })).toBeVisible()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
+})
+
+test('language switch tolerates unavailable localStorage', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'localStorage', { get() { throw new Error('Storage blocked') } })
+  })
+  await page.goto('/simulator')
+  await expect(page.locator('html')).toHaveAttribute('lang', 'ru')
+  await page.getByRole('button', { name: 'Қазақша', exact: true }).click()
+  await expect(page.locator('html')).toHaveAttribute('lang', 'kk')
+  await expect(page.getByRole('button', { name: 'Сценарийді бастау', exact: true })).toBeVisible()
+})

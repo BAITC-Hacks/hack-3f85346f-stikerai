@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 
 async function start(page: Page) {
-  await page.goto('/')
+  await page.goto('/simulator')
   await page.getByRole('button', { name: 'Начать сценарий' }).click()
   await expect(page.getByTestId('initiative-M7')).toBeEnabled()
 }
@@ -76,7 +76,7 @@ test('session isolation and mobile layout', async ({ page, browser }) => {
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
   const other = await browser.newContext()
   const secondPage = await other.newPage()
-  await secondPage.goto('http://127.0.0.1:5174')
+  await secondPage.goto(`${new URL(page.url()).origin}/simulator`)
   await expect(secondPage.getByRole('button', { name: 'Начать сценарий' })).toBeVisible()
   await other.close()
 })

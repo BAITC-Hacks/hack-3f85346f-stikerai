@@ -264,3 +264,36 @@ class CivicContext(Contract):
     community_funding: Money
     selected_support: Annotated[list[CivicSupport], Field(max_length=5)]
     districts: Annotated[list[CivicDistrictSignal], Field(max_length=5)]
+
+
+class MapGeometry(Contract):
+    type: Literal["MultiPolygon"]
+    coordinates: list[list[list[list[float]]]]
+
+
+class MapDistrictProperties(Contract):
+    code: str
+    name: str
+    source_url: str
+    district_id: UUID | None
+    candidate_district_id: UUID | None
+    mapping_status: Literal["verified", "unverified", "missing"]
+    mapping_note: str
+
+
+class MapDistrictFeature(Contract):
+    type: Literal["Feature"]
+    id: str
+    geometry: MapGeometry
+    properties: MapDistrictProperties
+
+
+class MapDistrictCollection(Contract):
+    type: Literal["FeatureCollection"]
+    features: list[MapDistrictFeature]
+    dataset_id: UUID
+    boundary_version: str
+    source_snapshot_at: str
+    retrieved_at: str
+    attribution: str
+    license_url: str

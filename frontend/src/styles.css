@@ -101,3 +101,15 @@ th, td { text-align: left; padding: 12px; border-bottom: 1px solid #d0d3c8; whit
 td small { display: block; margin-top: 5px; color: #526049; }
 .critical { background: #f8d9d2; }
 .contributions { margin-top: 24px; }
+
+/* Language selection remains visible at mobile widths. */
+.workspace-link { color: #087e97; font-size: 12px; font-weight: 600; text-underline-offset: 3px; }
+@media (max-width: 480px) { .workspace .topbar .workspace-link { max-width: 80px; font-size: 11px; } }
+.language-switcher { display: flex; flex-shrink: 0; gap: 4px; margin-left: auto; padding: 4px; border: 1px solid #c8a96b; border-radius: 8px; }
+.language-switcher button { font: inherit; font-size: 12px; padding: 7px 10px; border: 0; border-radius: 5px; color: #172338; background: transparent; cursor: pointer; }
+.language-switcher button[aria-pressed="true"] { background: #172338; color: #fff; }
+.source-language-note { font-size: 11px; opacity: .8; }
+@media (max-width: 480px) {
+  .workspace .topbar { padding-inline: 12px; gap: 10px; }
+  .language-switcher button { padding-inline: 6px; font-size: 11px; }
+}
