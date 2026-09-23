@@ -1,6 +1,6 @@
 """Wire contracts; metrics use lowercase datadoc.md codes (T1 -> t1)."""
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -122,6 +122,7 @@ class ScenarioRead(Contract):
     spent_budget: Money
     remaining_budget: Money
     decisions: list[DecisionRead]
+    revision: int
 
 
 class DistrictResultRead(Indicators):
@@ -146,3 +147,70 @@ class EvaluationRead(Contract):
     recommendations: list[str]
     created_at: datetime
     districts: list[DistrictResultRead]
+
+
+class ScenarioStart(ScenarioCreate):
+    request_id: UUID
+
+
+class RevisionRequest(Contract):
+    expected_revision: Annotated[int, Field(ge=0)]
+
+
+class PlanSave(DecisionsReplace, RevisionRequest):
+    pass
+
+
+class CopyRequest(Contract):
+    request_id: UUID
+
+
+class DistrictProjection(Contract):
+    district_id: UUID
+    name: str
+    before: Indicators
+    after: Indicators
+    baseline_score: Indicator
+    final_score: Indicator
+
+
+class AppliedEffect(Contract):
+    label: str
+    district_id: UUID
+    # Unclamped additive points, not an independently attributable Score change.
+    effects: dict[Metric, float]
+
+
+class CalculationRead(Contract):
+    scoring_version: str
+    baseline_score: CityScore
+    final_score: CityScore
+    baseline_critical_count: int
+    critical_count: int
+    average: float
+    weakest: float
+    spent_budget: Money
+    districts: list[DistrictProjection]
+    contributions: list[AppliedEffect]
+
+
+class ExplanationText(Contract):
+    summary: str
+    strengths: list[str]
+    risks: list[str]
+    consequences: list[str]
+    recommendations: list[str]
+
+
+class ExplanationRead(Contract):
+    status: Literal["pending", "running", "completed", "failed"]
+    payload: ExplanationText | None
+    error: str | None
+
+
+class CatalogRead(Contract):
+    dataset: DatasetRead
+    districts: list[DistrictRead]
+    initiatives: list[InitiativeRead]
+    rules: list[InitiativeRuleRead]
+    baseline: CalculationRead

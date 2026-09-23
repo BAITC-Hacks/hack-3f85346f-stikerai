@@ -1,0 +1,71 @@
+import { test, expect, type Page } from '@playwright/test'
+
+async function start(page: Page) {
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Начать сценарий' }).click()
+  await expect(page.getByTestId('initiative-M7')).toBeEnabled()
+}
+
+async function pick(page: Page, code: string, district?: string) {
+  if (district) await page.getByTestId(`district-${code}`).selectOption({ label: district })
+  await page.getByTestId(`initiative-${code}`).click()
+  await expect(page.getByTestId(`initiative-${code}`)).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByTestId(`initiative-${code}`)).toBeEnabled()
+}
+
+test('real API: five decisions, reference score, reload, AI failure, copy', async ({ page }) => {
+  await start(page)
+  await expect(page.getByTestId('budget')).toContainText('100')
+  await expect(page.getByTestId('score')).toHaveText('52,56')
+  await pick(page, 'M7', 'Нура')
+  await pick(page, 'M8', 'Нура')
+  await pick(page, 'M10', 'Нура')
+  await pick(page, 'M12')
+  await pick(page, 'M5', 'Сарыарка')
+  await expect(page.getByTestId('score')).toHaveText('56,54')
+  await page.reload()
+  await expect(page.getByTestId('score')).toHaveText('56,54')
+  await page.getByRole('button', { name: 'Показать анализ сценария' }).click()
+  await expect(page.getByText('AI не настроен на сервере.', { exact: false })).toBeVisible()
+  await expect(page.getByTestId('initiative-M7')).toBeDisabled()
+  await page.getByRole('button', { name: 'Повторить AI-анализ' }).click()
+  await expect(page.getByTestId('score')).toHaveText('56,54')
+  await page.reload()
+  await expect(page.getByText('Результат сохранён', { exact: false })).toBeVisible()
+  await page.getByRole('button', { name: 'Создать копию и изменить' }).click()
+  await expect(page.getByTestId('initiative-M7')).toBeEnabled()
+  await page.getByTestId('initiative-M7').click()
+  await expect(page.getByTestId('initiative-M7')).toHaveAttribute('aria-pressed', 'false')
+})
+
+test('invalid targets, conflicts and over-budget choices remain unsaved', async ({ page }) => {
+  await start(page)
+  await page.getByTestId('initiative-M1').click()
+  await expect(page.getByRole('alert')).toContainText('Выберите район')
+  await pick(page, 'M1', 'Нура')
+  await page.getByTestId('district-M3').selectOption({ label: 'Сарыарка' })
+  await page.getByTestId('initiative-M3').click()
+  await expect(page.getByRole('alert')).toContainText('несовместимы')
+  await expect(page.getByTestId('initiative-M3')).toHaveAttribute('aria-pressed', 'false')
+  await page.getByTestId('initiative-M1').click()
+  await expect(page.getByTestId('initiative-M1')).toHaveAttribute('aria-pressed', 'false')
+  await pick(page, 'M3', 'Нура')
+  await pick(page, 'M5', 'Сарыарка')
+  await pick(page, 'M7', 'Нура')
+  await pick(page, 'M10', 'Нура')
+  await page.getByTestId('initiative-M14').click()
+  await expect(page.getByRole('alert')).toContainText('Превышен бюджет')
+  await expect(page.getByRole('button', { name: 'Показать анализ сценария' })).toBeDisabled()
+})
+
+test('session isolation and mobile layout', async ({ page, browser }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await start(page)
+  await expect(page.getByTestId('budget')).toBeVisible()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
+  const other = await browser.newContext()
+  const secondPage = await other.newPage()
+  await secondPage.goto('http://127.0.0.1:5174')
+  await expect(secondPage.getByRole('button', { name: 'Начать сценарий' })).toBeVisible()
+  await other.close()
+})

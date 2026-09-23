@@ -33,7 +33,11 @@ services:
     build:
       context: ./backend
       target: development
-    environment: *database_environment
+    environment:
+      <<: *database_environment
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
     depends_on:
       migrate:
         condition: service_completed_successfully

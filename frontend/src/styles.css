@@ -1,4 +1,29 @@
 :root { font-family: 'DM Sans', 'Helvetica Neue', sans-serif; color: #17201d; background: #f4f1e9; font-synthesis: none; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid #a7473f; outline-offset: 3px; }
+.session-toolbar { display: flex; align-items: end; gap: 18px; flex-wrap: wrap; margin-top: 30px; }
+.session-toolbar label, .district-target { display: grid; gap: 7px; font-size: 12px; }
+select, input { font: inherit; color: #17201d; border: 1px solid #bfc5b6; padding: 10px; background: #fafaf1; max-width: 100%; }
+.secondary-action { padding: 11px 15px; background: #eef1d8; border: 1px solid #65716a; cursor: pointer; }
+.save-state, .loading-message { color: #526049; font-size: 12px; }
+.error-banner { padding: 18px; margin: 20px 0; background: #f8d9d2; border: 1px solid #a7473f; display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.error-banner button { background: transparent; border: 0; text-decoration: underline; cursor: pointer; }
+.initiative-card .option { width: 100%; height: auto; min-height: 110px; }
+.district-target { margin-top: 12px; }
+.district-target select { width: 100%; min-width: 0; font-size: 11px; }
+.effect-details { font-size: 10px; margin: 12px 0; color: #526049; line-height: 1.5; }
+summary { cursor: pointer; }
+.effect-details p { margin: 6px 0; }
+.ai-note h4 { margin-bottom: 5px; }
+.ai-note ul { padding-left: 15px; font-size: 12px; line-height: 1.6; }
+.results-panel { margin-top: 48px; }
+.results-panel > p, .contributions { color: #526049; font-size: 12px; line-height: 1.6; }
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th, td { text-align: left; padding: 12px; border-bottom: 1px solid #d0d3c8; white-space: nowrap; }
+td small { display: block; margin-top: 5px; color: #526049; }
+.critical { background: #f8d9d2; }
+.contributions { margin-top: 24px; }
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; background: #f4f1e9; }
 button { font: inherit; }
