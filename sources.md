@@ -80,6 +80,7 @@ UN-Habitat’s participatory planning toolkit describes planning as a multi-stak
 
 - [OpenStreetMap copyright and ODbL terms](https://www.openstreetmap.org/copyright); [OSMF tile policy](https://operations.osmfoundation.org/policies/tiles/).
 - Useful for road/path networks, mapped crossings, school POIs, parks and transit stop candidates. Coverage, completeness and edit dates vary; field-check critical site features. Attribute “© OpenStreetMap contributors” and assess ODbL for derivative databases. The public tile service is not a bulk data API or unrestricted production tile host.
+- **Now integrated as map-only context:** a snapshot fetched through Overpass on 2026-09-23 contains 171 features in the Astana reference bounding box tagged `amenity=school` (160 have a name); the OSM data snapshot timestamp is 2026-09-22T08:45:51Z. See [`schools.geojson`](backend/data/enrichment/astana-context-v1/osm/schools.geojson), [`overpass-query.txt`](backend/data/enrichment/astana-context-v1/osm/overpass-query.txt), and the release [`manifest`](backend/data/enrichment/astana-context-v1/manifest.json). The app serves these points on an interactive map with object links and visible OSM/ODbL attribution. Features are not independently verified schools and do not feed the synthetic district score or initiative effects.
 
 ### 8. Resident priorities and service requests
 

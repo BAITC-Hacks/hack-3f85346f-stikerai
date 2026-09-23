@@ -31,6 +31,26 @@
       "attribution": "Weather data by Open-Meteo.com (https://open-meteo.com/), licensed under CC BY 4.0.",
       "transformations": "Raw API JSON retained; compact daily sample excerpted without changing values. See weather/README.md for retrieval and interpretation.",
       "affects_simulator_score": false
+    },
+    {
+      "layer_id": "osm-amenity-school-astana-snapshot",
+      "semantic_status": "community-mapped-context",
+      "quality_status": "provisional",
+      "path": "osm/schools.geojson",
+      "sha256": "713ec23538b2fbd19548a76def40e6bcbd29c550fb09b06baf6dbca38501d1d6",
+      "source_card": "../../../../docs/enrichment/urban-quality/README.md",
+      "source": "OpenStreetMap via Overpass API",
+      "query_path": "osm/overpass-query.txt",
+      "retrieved_date": "2026-09-23",
+      "source_snapshot": "2026-09-22T08:45:51Z",
+      "feature_count": 171,
+      "named_feature_count": 160,
+      "spatial_support": "Point features within the Astana reference bbox (51.0, 71.2, 51.3, 71.7), tagged amenity=school; not an official or complete school register",
+      "crs": "EPSG:4326",
+      "license": "Open Database License (ODbL)",
+      "attribution": "© OpenStreetMap contributors",
+      "transformations": "OSM nodes retained as points; ways/relations represented by Overpass-provided center points; only selected descriptive tags and OSM object IDs retained",
+      "affects_simulator_score": false
     }
   ],
   "research_only": [

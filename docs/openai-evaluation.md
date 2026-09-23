@@ -7,6 +7,13 @@ returns that object with the configured model name. It must never calculate,
 change, or persist the score; the caller owns deterministic scoring and
 evaluation persistence.
 
+The request context includes selected initiatives, the validated budget,
+before/after overall and district scores, and baseline/projected/delta
+indicator values for each district. The current decision dataset remains
+synthetic. The prompt forbids inferring resident support or dissatisfaction
+from selected initiatives; no live source layer or social data is currently
+sent to the model.
+
 ## Configuration
 
 Set these in the server `.env` file. Compose forwards them to the backend only;

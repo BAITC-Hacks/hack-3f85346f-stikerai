@@ -287,8 +287,16 @@ def post_evaluate(scenario_id: UUID, session: Session = Depends(get_session)) ->
                         "code": district.code,
                         "name": district.name,
                         "population_share": district.population_share,
-                        "score": projected.district_scores[district.id],
-                        "indicators": projected.indicators[district.id],
+                        "baseline_score": baseline.district_scores[district.id],
+                        "projected_score": projected.district_scores[district.id],
+                        "score_delta": projected.district_scores[district.id] - baseline.district_scores[district.id],
+                        "baseline_indicators": baseline.indicators[district.id],
+                        "projected_indicators": projected.indicators[district.id],
+                        "indicator_deltas": {
+                            metric.value: projected.indicators[district.id][metric.value]
+                            - baseline.indicators[district.id][metric.value]
+                            for metric in Metric
+                        },
                     } for district in districts],
                 },
             }

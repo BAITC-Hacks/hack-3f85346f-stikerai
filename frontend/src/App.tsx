@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { CityLiveView } from './CityLiveView'
+import { CityContextMap } from './CityContextMap'
 import { PublicSignalsPanel } from './PublicSignalsPanel'
 
 type District = {
@@ -233,6 +234,7 @@ export default function App() {
           </aside>
         </div>
 
+        <CityContextMap />
         <PublicSignalsPanel />
         <CityLiveView />
       </main>
