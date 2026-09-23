@@ -1,372 +1,173 @@
 # StikerAI — «Аким на 5 часов»
 
-Учебный симулятор управления городом для городских управленцев, аналитиков и участников хакатона. Проект помогает исследовать, как распределение ограниченного бюджета между транспортом, экологией, социальной инфраструктурой, безопасностью и городскими сервисами влияет на качество жизни районов Астаны.
+StikerAI — учебный симулятор городских решений и демонстрация взаимодействия администрации с жителями. Пользователь собирает план из пяти инициатив в рамках общего виртуального бюджета; backend проверяет план, детерминированно считает показатели районов и итоговый Astana Quality of Life Score. AI может объяснить уже рассчитанный результат, но не принимает решение и не меняет числа.
 
-**Текущий статус:** интерфейс подключён к API, БД и серверному расчёту. Реализованы сохранение черновиков, восстановление сессии, фиксация результатов и AI-объяснение через настраиваемый OpenAI Responses API. Без AI-ключа работает весь численный сценарий. Текущий экран — **ASTANA // AKIM MODE**: command center для акима и отдельное citizen workspace для демонстрации обратной связи жителей. Это учебный прототип, а не инструмент прогнозирования реальных городских показателей.
+**Это прототип, а не цифровой двойник и не система прогноза реальных городских эффектов.** Входные показатели, бюджетные эффекты и общественные сигналы симулятора синтетические. Реальные геоданные карты показаны отдельно и не участвуют в оценке.
 
-## 1. Что реализовано
+## Что реализовано
 
-### Интерфейс
+- **Akim workspace:** портфель инициатив, общий бюджет 100 виртуальных единиц, выбор районов, проверка ограничений, предварительный расчёт и сохранённый результат.
+- **Детерминированная модель:** пять синтетических районов, десять показателей, 14 инициатив, лаги, синергии и конфликты. При отправке требуется ровно пять разных инициатив; допускается не более двух инициатив одного направления.
+- **Citizen workspace:** демонстрационные петиции, голоса, сообщения и проекты. Это вымышленные данные, хранящиеся локально в браузере; они не меняют государственный бюджет или Score.
+- **Карта:** шесть community-mapped границ районов и отдельный слой объектов OpenStreetMap с тегом `amenity=school`. Улицы загружаются отдельным слоем карты. География является контекстом, а не официальным кадастром и не связана с синтетическими показателями по неподтверждённому совпадению названий.
+- **AI-объяснение:** необязательный вызов OpenAI Responses API получает сохранённые результаты и отдельный явно вымышленный civic-снимок. AI не пересчитывает Score и не должен представлять вымышленные сигналы как мнение жителей.
+- **Сохранение сценариев:** PostgreSQL, анонимная браузерная сессия, проверка ревизии при записи, отправка и копирование сценариев.
 
-Главная страница `/` — командный центр с гражданскими инициативами и картой.
-Русско-казахский симулятор доступен на `/simulator`; ссылки между экранами сохраняют
-общую сессию, сценарий и выбранные районы. Карта также доступна в разделе Districts.
+Интерфейсы доступны на `/` (command center) и `/simulator` (русско-казахский симулятор). Оба используют общую сессию и каталог.
 
-- Адаптивный command center с пятью направлениями городского развития и вариантами инициатив.
-- Два режима: **Akim workspace** для городских решений и **Citizen workspace** для локальной демонстрации участия жителей.
-- City Pulse, районы, петиции, голоса, инициативы и community funding используют отдельные синтетические civic-данные.
-- AI не принимает решение за акима: он показывает последствия выбранного сценария, его влияние на районы, бюджет и Quality of Life Score.
-- Выбор пяти инициатив с районной или городской областью действия.
-- Серверная проверка бюджета, направлений, повторов и несовместимостей.
-- Пять районов, десять показателей, вклад мероприятий и синергий.
-- Сохранение сценариев, история текущей браузерной сессии и копирование завершённого сценария.
+## Технологии и архитектура
 
-Интерфейс использует серверный каталог и бюджет **100 условных единиц**. Score рассчитывается только сервером; браузер округляет его для отображения.
+| Слой | Технологии | Ответственность |
+| --- | --- | --- |
+| Frontend | React 19, TypeScript, Vite 7, CSS, Lucide React | Рабочие пространства, локальная civic-демонстрация и отображение результатов |
+| Карта | MapLibre GL, Leaflet, GeoJSON | OSM-границы районов, контекстные school POI и необязательная подложка улиц |
+| API | Python 3.12, FastAPI, Pydantic, Uvicorn | Каталог, сессии, проверка и сохранение решений, расчёт, карта и объяснения |
+| Хранение | PostgreSQL 16, SQLAlchemy 2, psycopg 3, Alembic | Версии набора, сценарии, расчёты, AI-объяснения и миграции |
+| Запуск / CI | Docker Compose v2, GitHub Actions, pytest, Playwright | Повторяемый локальный запуск, проверки backend/frontend и сборка |
+| AI | OpenAI Responses API; необязательный MiroFish gateway | Качественное объяснение рассчитанного backend результата |
 
-### Серверный слой
-
-- FastAPI-приложение с API каталога, сценариев, расчёта, AI-объяснений, health endpoint и Swagger UI.
-- SQLAlchemy-модели наборов данных, районов, инициатив, правил совместимости, сценариев, решений, оценок и результатов районов.
-- Начальная миграция Alembic и повторяемое заполнение синтетическими данными.
-- Pydantic-схемы и генерация TypeScript-типов из этих схем.
-- Python-сервисы создания сценария, атомарной замены набора решений и отправки сценария. Отправленный сценарий нельзя редактировать через этот сервис.
-- Валидатор: ровно пять решений при отправке, без повторов, не более двух инициатив одного направления, соблюдение бюджета, корректный район и отсутствие запрещённых сочетаний.
-- Детерминированный расчёт Score с учётом лага, городских и районных эффектов, синергий и критических показателей.
-- Тесты правил, контрольного расчёта, миграций, сериализации и конкурентной отправки/редактирования в PostgreSQL.
-
-### Инфраструктура
-
-Docker Compose объединяет frontend, backend, PostgreSQL и одноразовые сервисы миграции и загрузки датасета. В GitHub Actions настроены тесты, проверка актуальности типов, сборка frontend и сборка Docker-образов. Development-контейнеры монтируют актуальные migrations и dataset, поэтому изменения схемы и синтетических данных видны без пересборки приложения.
-
-## 2. Как работает решение
-
-Пользовательский сценарий в браузере:
-
-1. Загружается версия `astana-synthetic-v1`: общий бюджет **100 условных единиц**, пять районов, десять показателей и 14 инициатив.
-2. Пользователь формирует пять решений. Для районной инициативы выбирается район; для городской район не указывается.
-3. Валидатор проверяет стоимость, количество решений, направления, повторения и несовместимости. Невалидный набор отклоняется с причиной.
-4. Расчёт применяет эффекты, масштабированные по лагу, добавляет фиксированные синергии и ограничивает показатели диапазоном 0–100.
-5. Получаются итоговые показатели районов, их оценки, средний городской показатель, показатель самого слабого района, число критических значений и итоговый Score.
-
-Формула версии `astana-qol-v1`:
+Поток расчёта:
 
 ```text
-реализованный эффект = полный эффект × (8 − лаг в кварталах) / 8
-оценка района = сумма(вес показателя × итоговое значение показателя)
-D_avg = сумма(доля населения района × оценка района)
+React UI → FastAPI → проверка бюджета/правил → Python scoring → сохранённый результат
+                                                        └→ AI explanation (optional)
+```
+
+Основные файлы: `frontend/src/App.tsx` и `frontend/src/SimulatorWorkspace.tsx` — интерфейс; `backend/app/api/simulator.py` — сценарии и API; `backend/app/services/scenarios.py` — правила плана; `backend/app/services/scoring.py` и `backend/app/services/results.py` — численный расчёт; `backend/app/services/llm.py` — AI; `backend/app/models.py` и `backend/migrations/` — хранение и схема БД.
+
+Формула модели `astana-qol-v1` описана в [datadoc.md](datadoc.md):
+
+```text
+применённый эффект = полный эффект × (8 − лаг кварталов) / 8
+оценка района = Σ(вес показателя × значение показателя)
+D_avg = Σ(доля населения района × оценка района)
 Score = 0.7 × D_avg + 0.3 × min(оценки районов) − N_crit
 ```
 
-`N_crit` — число пар «район × показатель» со значением строго ниже 40. Итоговый городской Score может быть отрицательным; он не ограничивается снизу нулём. Остаток бюджета не даёт бонуса.
+`N_crit` — количество значений «район × показатель» ниже 40. Показатели ограничиваются диапазоном 0–100; итоговый Score формулой снизу не ограничивается и теоретически может быть отрицательным. AI получает рассчитанные числа, компромиссы и решения; вычисления остаются в Python.
 
-После выбора пяти мероприятий отображается серверный предварительный расчёт. Кнопка «Показать анализ сценария» фиксирует решения и сохраняет итог. Затем запускается AI-объяснение. При ошибке провайдера численные результаты остаются доступны, объяснение можно запросить повторно. Для изменения завершённого сценария создаётся копия.
+## Установка и запуск
 
-## 3. Технологии
-
-- **Frontend:** TypeScript, React 19, Vite 7, CSS, Lucide React.
-- **Backend:** Python 3.12, FastAPI, Uvicorn, Pydantic.
-- **База данных:** PostgreSQL 16, SQLAlchemy 2, драйвер psycopg 3, Alembic.
-- **Проверки:** pytest, HTTPX/TestClient, TypeScript compiler, Playwright. SQLite используется для локальных тестов, PostgreSQL — для проверки поведения целевой БД в CI.
-- **Окружение:** Docker, Docker Compose v2, GitHub Actions.
-- **AI:** OpenAI Responses API со структурированным JSON-ответом; модель и ключ задаются на сервере. Для численного расчёта ключ не нужен.
-
-Версии Python-зависимостей указаны в [requirements.txt](backend/requirements.txt), frontend-зависимости — в [package.json](frontend/package.json) и [package-lock.json](frontend/package-lock.json).
-
-## 4. Архитектура
-
-- `frontend/src/App.tsx` — экран симулятора; данные сценария сохраняются в БД через `frontend/src/api.ts`.
-- `frontend/vite.config.ts` — прокси `/api` к backend.
-- `backend/app/api/simulator.py` — API, владение сценариями, фиксация расчёта и запуск объяснений.
-- `backend/app/services/scenarios.py` — правила выбора, транзакции и жизненный цикл сценария.
-- `backend/app/services/scoring.py` — численный расчёт, независимый от AI.
-- `backend/app/models.py` и `schemas.py` — модель хранения и контракты данных.
-- `backend/migrations/` — версия схемы БД; `backend/app/seed.py` — загрузчик датасета.
-- `backend/data/astana-v1.json` — исходные синтетические значения.
-- `backend/tests/` — проверки; `backend/scripts/export_types.py` — генератор типов frontend.
-
-При запуске Compose сначала ожидает готовности PostgreSQL, затем сервис `migrate` применяет миграции, после чего запускаются backend и frontend. Данные БД хранятся в volume `postgres_data` и сохраняются после `docker compose down`.
-
-Карта показывает отдельный снимок OSM-объектов, помеченных как школы; это
-реальные community-mapped данные для поиска кандидатов, не официальный реестр
-и не вход модели. Снимок и атрибуция описаны в `backend/data/enrichment/`.
-Блок «Предложения жителей» использует вымышленные агрегаты для демонстрации
-интерфейса и подавления малых групп. Это не реальные сообщения и не опрос.
-Источники социальных сетей не подключены; внешний MiroFish gateway выключен
-по умолчанию. Публичный видеоплеер загружается только после нажатия и не
-анализируется приложением. Подробнее: [план Public Signals и MiroFish](MiroFish_Local_Opinion_Plan.md)
-и [карта гражданских данных](docs/enrichment/civic-evidence-map.md).
-
-Сценарии привязаны к версии общего датасета. Изменения набора решений блокируют строку сценария в PostgreSQL. Ограничения БД защищают ссылки между сущностями и запрещают повторные инициативы; совокупные бизнес-правила проверяются Python-сервисом. Подробнее: [модель данных](docs/data-model.md).
-
-## 5. Установка и запуск
-
-### Через Docker — основной способ
-
-Нужны Git и Docker с Compose v2. На Windows используйте Docker Desktop в режиме Linux containers. Порты по умолчанию: `5173`, `8000`, `5432`.
+Нужны Git, Docker Engine/Desktop и Docker Compose v2.
 
 ```sh
 git clone https://github.com/BAITC-Hacks/hack-3f85346f-stikerai.git
 cd hack-3f85346f-stikerai
-docker compose up --build -d
-docker compose ps
-```
-
-Compose автоматически запускает seed после миграций и до API. Seed создаёт датасет при первом вызове; повторный запуск сохраняет существующую версию.
-
-Адреса:
-
-- [Интерфейс](http://localhost:5173).
-- [Swagger UI](http://localhost:8000/docs).
-- [Health endpoint](http://localhost:8000/api/health).
-
-Для настройки портов и реквизитов БД скопируйте `.env.example` в `.env` **до запуска**:
-
-```sh
-# Linux / macOS
 cp .env.example .env
+docker compose up --build -d --wait
 ```
 
-```powershell
-# Windows PowerShell
-Copy-Item .env.example .env
-```
+На Windows PowerShell вместо `cp` используйте `Copy-Item .env.example .env`. Compose запускает PostgreSQL, миграции и seed синтетического датасета, затем API и Vite frontend.
 
-Compose использует переменные `FRONTEND_PORT`, `BACKEND_PORT`, `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`. Публикуемые порты привязаны к `127.0.0.1`. Реквизиты по умолчанию предназначены для локальной разработки. Изменение реквизитов после создания volume само по себе не изменяет пользователей существующей БД.
+- Приложение: <http://localhost:5173>
+- Русско-казахский симулятор: <http://localhost:5173/simulator>
+- FastAPI / Swagger: <http://localhost:8000/docs>
+- Health: <http://localhost:8000/api/health>
 
-Полезные команды:
+Для детерминированного расчёта ключи не нужны. Для AI-объяснения задайте `OPENAI_API_KEY` **и** `OPENAI_MODEL` в `.env`, затем пересоздайте backend:
 
 ```sh
-docker compose logs backend migrate db
+docker compose up -d --force-recreate backend
+```
+
+`OPENAI_BASE_URL` и `OPENAI_TIMEOUT_SECONDS` настраивают API endpoint и timeout. `VITE_MAP_STYLE_URL` задаёт публичный стиль слоя улиц, `VITE_MAP_TILE_URL` — тайлы школьного контекста. Эти map-переменные видны браузеру; не размещайте в них секреты. `MIROFISH_ENABLED` по умолчанию `false`; для адаптера требуется отдельный защищённый gateway. Все параметры и локальные значения находятся в [.env.example](.env.example).
+
+Логи и остановка:
+
+```sh
+docker compose logs backend frontend db migrate seed
 docker compose down
 ```
 
-Изменения исходников frontend/backend подхватываются автоматически. После изменения зависимостей, миграций или датасета пересоберите образы командой запуска с `--build`.
+PostgreSQL хранится в volume `postgres_data`; `docker compose down` сохраняет его. Для чистой локальной демонстрационной БД можно выполнить `docker compose down -v` — эта команда удаляет volume с данными.
 
-### Локальные процессы frontend и backend
+## Пример проверки
 
-Нужны Python 3.12 и Node.js 22.12+ с npm. PostgreSQL можно запустить отдельно из корня проекта:
-
-```sh
-docker compose up -d db
-cd backend
-python -m venv .venv
-```
-
-Активируйте окружение:
-
-```powershell
-# Windows PowerShell
-.venv\Scripts\Activate.ps1
-```
+Проверьте доступность API:
 
 ```sh
-# Linux / macOS
-source .venv/bin/activate
+curl -fsS http://localhost:8000/api/health
 ```
 
-Далее из `backend`:
-
-```sh
-python -m pip install -r requirements-dev.txt
-python -m alembic upgrade head
-python -m app.seed
-python -m uvicorn app.main:app --reload
-```
-
-По умолчанию Python подключается к `postgresql+psycopg://stikerai:stikerai@localhost:5432/stikerai`. Для другого адреса задайте `DATABASE_URL` в окружении процесса. Корневой `.env` Python автоматически не загружает.
-
-Во втором терминале из корня проекта:
-
-```sh
-cd frontend
-npm ci
-npm run dev
-```
-
-Прокси Vite по умолчанию направляет `/api` на `http://127.0.0.1:8000`, а в Docker — на `http://backend:8000`. Адрес можно изменить переменной `API_PROXY_TARGET`.
-
-## 6. Как проверить решение
-
-### Доступность API
-
-Откройте [health endpoint](http://localhost:8000/api/health). Ожидаемый ответ:
+Ожидаемый ответ:
 
 ```json
 {"status":"ok","service":"stikerai-backend"}
 ```
 
-Этот endpoint проверяет доступность приложения, но не соединение с БД.
+В интерфейсе нажмите **Enter Command Center** и соберите контрольный план из набора `astana-synthetic-v1`:
 
-### Демонстрационный интерфейс
+| Инициатива | Цель | Стоимость |
+| --- | --- | ---: |
+| M7 — школа и детсад | Нура | 24 |
+| M8 — семейный медцентр | Нура | 20 |
+| M10 — освещение и камеры | Нура | 12 |
+| M12 — платформа обращений | Весь город | 14 |
+| M5 — чистое топливо | Сарыарка | 25 |
 
-1. Откройте [localhost:5173](http://localhost:5173).
-2. В каждом направлении выберите «Ничего не менять». Расход станет нулевым, остаток — 5 000 000 ₸, демонстрационная оценка — 62.
-3. Выберите «Открытые данные» в городских сервисах: расход станет 300 000 ₸, остаток — 4 700 000 ₸, оценка — 67.
-4. Обновите страницу: выбор сбросится, поскольку хранится только в состоянии React.
+Backend должен принять план стоимостью **95 из 100** и показать контрольный расчёт: базовый Score **52.55768**, итоговый **56.54307**, критические показатели — с **2 до 0**. Это тестовый результат синтетической формулы, не оценка реального воздействия.
 
-Это проверка интерфейса, а не серверной формулы из `datadoc.md`.
-
-### Контрольный серверный сценарий
-
-Набор из исходной спецификации:
-
-- M7 — школа и детсад, Нура.
-- M8 — поликлиника, Нура.
-- M10 — освещение и камеры, Нура.
-- M12 — платформа обращений, весь город.
-- M5 — чистое топливо, Сарыарка.
-
-Стоимость: **95 из 100**. Базовый Score: **52.55768**. Итоговый Score: **56.54307**. Число критических показателей уменьшается с **2 до 0**. Учитывается синергия M10 + M12.
-
-Повторите проверку в Docker:
+Backend-проверки на запущенном Compose:
 
 ```sh
-docker compose exec backend python -m pytest -q tests/test_data_model.py::test_reference_scores_and_order_independence
+docker compose exec backend python -m pytest -q
 ```
 
-Либо из `backend` с активированным Python-окружением:
-
-```sh
-python -m pytest -q tests/test_data_model.py::test_reference_scores_and_order_independence
-```
-
-Тест создаёт изолированную тестовую БД, применяет миграции, загружает исходные данные и проверяет численные результаты, стоимость и независимость от порядка решений. Этот же набор можно выбрать в интерфейсе и отправить через HTTP API.
-
-### Остальные проверки
-
-```sh
-# Из backend с активным окружением
-python -m pytest -q
-python scripts/export_types.py --check
-
-# Из frontend
-npm run build
-```
-
-Каждый `npm run build` сначала запускает `prebuild`: получает свежие версии всех веток со всех Git remotes и проверяет, что их коммиты включены в текущий checkout. Проверка работает также в detached HEAD и shallow/single-branch клонах; CI получает полную историю. Если есть невключённые коммиты, сборка останавливается и перечисляет ветки с числом новых коммитов. Выполните merge или rebase обновлений и повторите сборку. При ошибке сети или авторизации сборка также останавливается, чтобы не использовать устаревшие сведения. Сам hook не выполняет merge, commit или push. Запускайте сборку через `npm run build`, а не напрямую через `vite build`, который обходит npm hooks.
-
-Для тестов без `TEST_DATABASE_URL` используется SQLite в памяти, проверка конкурентности PostgreSQL пропускается. Чтобы проверить целевую СУБД, задайте `TEST_DATABASE_URL` на тестовую PostgreSQL: пользователь должен иметь право создавать схемы. Каждый тест создаёт и удаляет отдельную схему. Такой запуск настроен в CI; наличие конфигурации не означает, что текущий запуск CI уже прошёл.
-
-Браузерные тесты: из `frontend` выполните `npx playwright install chromium`, затем `npm run test:e2e`. Они сами поднимают реальный API с миграциями и seed в изолированной временной SQLite, а также Vite. На Windows требуется `backend/.venv`; на Linux используется `python` текущего окружения. LLM в браузерных тестах отключена; успешные и ошибочные ответы провайдера покрыты изолированными API-тестами.
-
-## 7. Данные и интеграции
-
-Источники внутри проекта:
-
-- [PRD.md](PRD.md) — задача и требования хакатона.
-- [datadoc.md](datadoc.md) — показатели, стоимость мероприятий, ограничения и формула Score.
-- [astana-v1.json](backend/data/astana-v1.json) — машинно-читаемый датасет: Есиль, Алматы, Сарыарка, Байконур и Нура; 10 показателей на район; 14 инициатив; 3 синергии; 3 несовместимости; горизонт 8 кварталов.
-
-Значения синтетические и не являются официальной статистикой. Все десять показателей направлены одинаково: 100 — лучшее состояние, 0 — худшее. Интерфейс загружает их из общего серверного датасета.
-
-Для расчёта не нужны внешние API или AI-ключи. Установка требует доступа к реестрам Python/npm и Docker-образов. GitHub используется для хранения кода и CI.
-
-[QGIS_Plan.md](QGIS_Plan.md) описывает будущий картографический слой. Геоданные, карта, QGIS/PostGIS-интеграция и загрузка внешних городских данных в текущем приложении не реализованы.
-
-## 8. Известные ограничения
-
-- Сессия анонимная: HttpOnly cookie хранится 30 дней. После её удаления доступ к прежним сценариям из этого браузера теряется. Учётные записи и сравнение команд не реализованы.
-- Старые сценарии, созданные напрямую Python-сервисом без владельца, не открываются через пользовательский API.
-- AI требует настроенного ключа и доступной модели; реальные запросы к платному провайдеру не выполняются тестами.
-- AI-задачи выполняются в процессе backend. После прерывания процесса запрос можно повторить по истечении 90 секунд; для масштабирования нужен отдельный worker.
-- Генерация презентаций не реализована.
-- Не реализованы неожиданные городские события и интерактивная карта.
-- Неизменяемость опубликованного датасета — правило приложения; прямые SQL-изменения могут нарушить его и обойти часть бизнес-валидации.
-- Docker Compose настроен для разработки: используется сервер Vite и автоматическая перезагрузка backend. Production-конфигурация, HTTPS и публичное развёртывание не представлены.
-
-## 9. Развёрнутая версия
-
-API-маршруты, настройка `OPENAI_API_KEY` / `OPENAI_MODEL`, поведение сессий,
-повторов и AI-задач описаны в [руководстве интеграции](docs/integration.md).
-
-Ссылка на публично развёрнутое приложение в текущем репозитории не указана. Для проверки используйте локальный запуск выше.
-
-Репозиторий: [BAITC-Hacks/hack-3f85346f-stikerai](https://github.com/BAITC-Hacks/hack-3f85346f-stikerai).
-
-## Общественные сигналы и городской контекст
-
-Интерактивная карта районов доступна над портфелем решений: нажмите «Открыть карту».
-Она показывает шесть границ из OpenStreetMap, позволяет сравнивать показатели
-учебной модели и назначать район мероприятию. Улицы включаются отдельным слоем.
-Непроверенные связи географии с датасетом показаны серым; показатели по улицам
-пока отсутствуют. [Устройство, данные и настройка карты](docs/interactive-map.md).
-
-Панель «Предложения жителей» получает синтетические демонстрационные сводки из
-`GET /api/signals/proposals` и `GET /api/signals/proposals/{id}/aggregates`.
-Малые группы скрываются. Эти данные не отражают мнение жителей и не влияют на Score.
-Блок «Астана сейчас» загружает сторонний плеер только после нажатия.
-
-`GET /api/datasets/current` возвращает текущий датасет и базовый Score.
-`POST /api/scenarios/{id}/evaluate` запускает объяснение уже сохранённого расчёта
-через тот же защищённый механизм, что и `/explanation`; ответ содержит статус
-Explanation. Сохранение решений и submit требуют `expected_revision`, как описано
-в [руководстве интеграции](docs/integration.md).
-
-Опциональный [MiroFish-адаптер](docs/mirofish-adapter.md) выключен по умолчанию.
-Он принимает проверенную агрегированную сводку и использует настраиваемый шлюз.
-См. также [карту источников](docs/enrichment/civic-evidence-map.md),
-[исследование общественных сигналов](docs/enrichment/public-signals/README.md)
-и [настройку AI-адаптеров](docs/openai-evaluation.md).
-
-## ASTANA // Command Center + Citizen Participation
-
-The command-center refactor preserves the existing dataset, validation, deterministic Python scoring engine, persistent scenario APIs, and original browser regression tests. The frontend continues to use React, TypeScript and Vite; Lucide supplies the navigation icons. No external map service or payment provider is needed.
-
-### Local demo
-
-```sh
-docker compose up --build -d --wait
-```
-
-Open **http://localhost:5173**. Compose runs migrations and the idempotent dataset seed before starting the backend. Development containers mount current migrations and data read-only. Optional AI credentials stay in root `.env` and are read only by the backend.
-
-1. Choose **Enter Command Center**. The baseline is **52.56**; click **Nura** to inspect its schools and healthcare.
-2. Open **Listen to the city** to compare city indicators with fictional resident priorities.
-3. Select **M7 → Nura**, **M8 → Nura**, **M10 → Nura**, **M12 → Citywide**, and **M5 → Saryarka**. Cost: **95**; calculated score: **56.54307**.
-4. Run **Simulate 2 years**. Review city impact, citizen alignment and community resources separately. Live AI is optional; deterministic advisory cards remain available without it.
-5. Switch to **Citizen workspace**. Sign a petition, vote, allocate 10 citizen points, report/confirm an issue, propose an idea, or make a **simulated** contribution.
-6. Return to the command center. Signatures, confirmations, funding and your activity feed share the same local state. The official score does not change.
-7. Press **Cmd/Ctrl + K** for the command palette. **Astana Open** gives a simplified public view. **Simulation settings** contains configurable fictional petition milestones and a confirmation-protected civic reset.
-
-### Data boundaries
-
-- **Official city impact:** the unchanged server-side engine alone computes scores and validates government plans. Citizen actions never enter its inputs. Baseline and valid five-decision previews are labelled; results are saved by the existing scenario workflow.
-- **Citizen alignment:** arithmetic mean of the fixed fictional support percentages for selected initiatives. An empty selection has no alignment value. This is advisory, not predicted satisfaction.
-- **Community resources:** sum of raised amounts in related community projects, matched to the selected initiative and district (or citywide scope), counted once per project. Tenge is never added to the virtual government budget. Civic-idea pledges remain separate from funded-project totals.
-- **Civic participation:** fictional fixtures in `frontend/src/data/{citizens,petitions,crowdfunding,issues,votes}.ts`, with one mock resident per browser profile. Votes, signatures and confirmations are idempotent; repeat demo contributions are allowed. State persists under `astana.civic.v1` in localStorage. An unavailable/full storage warning means the current session still works but persistence may fail.
-- **Petitions:** milestones are labelled **Demo simulation thresholds** and have no legal or administrative effect. A milestone does not automatically mark a petition accepted or implemented.
-- **Funding:** no real transactions, payment details or real organizer verification. Images are local optional report attachments (PNG/JPEG/WebP, up to 1 MB); project art is SVG/CSS.
-- **AI explanation:** receives saved numerical results and a bounded, explicitly fictional civic snapshot. Extra score fields in civic context are rejected. The snapshot is explanatory only and cannot alter saved calculations. The existing asynchronous provider, retry and session ownership logic is retained. Live local civic summaries can change after later participation; provider output is labelled as a snapshot at simulation time.
-- **Upstream civic evidence:** the original aggregated public-signal panels and opt-in city broadcast remain available beneath the command-center scenario controls. The broadcast is never loaded automatically.
-
-```mermaid
-flowchart LR
-  A[Government decisions] --> V[Existing scenario validator]
-  V --> E[Existing deterministic engine]
-  E --> R[Saved official results]
-  C[Local fictional citizen activity] --> P[Astana Pulse / district context]
-  C --> X[Separate alignment and funding summaries]
-  R --> AI[Optional AI explanation]
-  C -->|Bounded advisory snapshot only| AI
-  R --> UI[Command Center and results]
-  X --> UI
-  P --> UI
-```
-
-### QA
+Для browser E2E на хосте нужны Python 3.12, Node.js 22.12+ и Chromium. Команда запускает изолированный тестовый API и frontend; AI-запросы не требуются.
 
 ```sh
 cd backend
-.venv/bin/python -m pytest -q
-.venv/bin/python scripts/export_types.py --check
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements-dev.txt
 cd ../frontend
 npm ci
-npm run build
-PATH="$PWD/../backend/.venv/bin:$PATH" npm run test:e2e
+npx playwright install chromium
+PATH="../backend/.venv/bin:$PATH" npm run test:e2e
 ```
 
-`npm run build` fetches and checks all remote branches first. Browser tests use isolated SQLite and local servers, with live AI disabled. Existing tests retain the 52.56 baseline, 56.54 reference scenario, invalid-plan rejection, persistence, copy/retry, source aggregation and mobile coverage. Civic QA covers cross-workspace updates, persistence, duplicate protection, the ten-point cap, local submissions, fictional thresholds, keyboard navigation and desktop/tablet/mobile overflow. Backend coverage verifies that civic context reaches the explanation provider without changing the official result.
+Сборка frontend:
 
-### Prototype limits
+```sh
+cd frontend
+npm ci
+npm run build
+```
 
-Citizen records are local to one browser, not shared between actual residents. Project verification, participation counts, trends, map boundaries and funding are fictional. The timer is narrative and imposes no expiry penalty. Live AI requires optional server configuration; the core simulator and civic experience work locally with the Compose stack. Next steps are authenticated shared civic storage, moderation, audited public responses, real GIS boundaries, accessibility research and deployment hardening. Real payments require a separate, explicitly configured implementation.
+`npm run build` сначала запускает `prebuild`: скрипт получает историю веток с Git remotes и блокирует сборку, если текущий checkout отстаёт от какой-либо удалённой ветки. Для этого шага требуется Git remote и сеть. CI дополнительно проверяет генерацию типов, backend-тесты на SQLite/PostgreSQL, frontend build и Docker Compose.
+
+## Данные и внешние сервисы
+
+| Источник | Где используется | Статус и границы |
+| --- | --- | --- |
+| `backend/data/astana-v1.json`, `datadoc.md` | Бюджет, районы, индикаторы, меры, эффекты и Score | Синтетический учебный набор; не официальная статистика и не прогноз |
+| OpenStreetMap relations | Геометрия шести районов на карте | Снимок от 2026-09-23; community mapping, не кадастровая или официально подтверждённая граница. Лицензия ODbL и attribution показаны в UI |
+| OpenStreetMap через Overpass | 171 точка в снимке объектов, помеченных `amenity=school` | На 2026-09-22; могут быть неполные, устаревшие или неверно размеченные записи, включая колледжи/дошкольные объекты. Только поиск кандидатов; не официальный реестр |
+| OpenFreeMap и OSM tile service | Необязательные веб-подложки улиц | Загружаются браузером; требуют сети и зависят от условий/доступности поставщика. Границы и интерактивные списки остаются полезны без подложки |
+| OpenAI Responses API | Необязательное текстовое объяснение | Реальный внешний запрос только с серверными `OPENAI_API_KEY` и `OPENAI_MODEL`; численная модель остаётся в backend |
+| MiroFish gateway | Необязательный адаптер | Выключен по умолчанию; не собирает посты или сообщения из соцсетей |
+| Citizen fixtures / `localStorage` | Петиции, сигналы, community activity | Вымышленные локальные данные, не реальные голоса или финансирование |
+| Open-Meteo fixture в `backend/data/enrichment/` | Исследовательская фикстура | Снимок прогноза хранится с provenance; текущий интерфейс не использует его для показателей или Score |
+| YouTube livestream | Видеоконтекст | Загружается только по нажатию; видео не анализируется |
+
+Геоданные, происхождение карты и crosswalk описаны в [docs/interactive-map.md](docs/interactive-map.md), исследование источников — в [sources.md](sources.md) и [плане обогащения](Data_Enrichment_Research_Plan.md). Официальные источники по транспорту, школам, безопасности, воздуху и городским активам пока не подключены как проверенные слои показателей.
+
+## Известные ограничения
+
+- Реальные городские результаты нельзя выводить из синтетических метрик, условных цен и модельных эффектов.
+- Пять синтетических профилей не имеют подтверждённого crosswalk к шести картографическим районам; совпадение названий не используется для окрашивания районов по Score.
+- OSM не заменяет официальный перечень школ, полевую проверку или инженерный аудит. В текущем продукте нет дорожных замеров, аварийных точек, вместимости школ, локальных показателей воздуха или реальных данных обращений.
+- Civic workspace демонстрационный: действия жителей хранятся в браузере, не синхронизируются между людьми, петиции не имеют юридического эффекта, платежи не проводятся.
+- AI может быть не настроен; без ключа недоступно только внешнее текстовое объяснение. AI не подтверждает факты и не доказывает причинность.
+- Стандартные OSM/OpenFreeMap подложки зависят от внешней сети и политики поставщика; для production требуется выбранный провайдер или собственный tile-сервис. Публичный deployment в репозитории не указан.
+- Compose настроен для разработки: используются Vite dev server и auto-reload. Production-конфигурация, HTTPS, аутентификация пользователей и эксплуатационная поддержка не входят в этот прототип.
+
+## Развёрнутая версия и документация
+
+Публичная развёрнутая версия в репозитории не указана. Чтобы воспроизвести проект, используйте Docker Compose выше.
+
+- [PRD хакатона](PRD.md) и [DataDoc модели](datadoc.md)
+- [Архитектура и использование карты](docs/interactive-map.md)
+- [AI-объяснения](docs/openai-evaluation.md)
+- [Интеграционные API и сценарии](docs/integration.md)
+- [Источники данных](sources.md)
+- [Исследование обогащения](Data_Enrichment_Research_Plan.md)
