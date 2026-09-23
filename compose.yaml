@@ -25,6 +25,10 @@ services:
       PGUSER: ${POSTGRES_USER:-stikerai}
       PGPASSWORD: ${POSTGRES_PASSWORD:-stikerai}
       PGDATABASE: ${POSTGRES_DB:-stikerai}
+      MIROFISH_ENABLED: ${MIROFISH_ENABLED:-false}
+      MIROFISH_BASE_URL: ${MIROFISH_BASE_URL:-}
+      MIROFISH_API_TOKEN: ${MIROFISH_API_TOKEN:-}
+      MIROFISH_TIMEOUT_SECONDS: ${MIROFISH_TIMEOUT_SECONDS:-45}
     command: ["python", "-m", "alembic", "upgrade", "head"]
     depends_on:
       db:

@@ -60,13 +60,44 @@ resolution before anyone downloads large extracts or draws conclusions.
 | 2 | [Open-Meteo Forecast API](https://open-meteo.com/en/docs), [Historical Weather API](https://open-meteo.com/en/docs/historical-weather-api), [Historical Forecast API](https://open-meteo.com/en/docs/historical-forecast-api), [Climate API](https://open-meteo.com/en/docs/climate-api) | Candidate for near-term precipitation/weather events, modeled recent/history series, and ensemble climate context | The standard forecast horizon is up to 16 days; reanalysis history is model-filled grid data at roughly 9–25 km; historical forecasts are archived model runs; climate projections are scenarios, not weather forecasts. Current docs describe free use for non-commercial cases and CC BY 4.0 data attribution, with separate commercial/self-hosted conditions. Verify current plan and terms before use. |
 | 2 | [Google Maps Platform Weather API](https://developers.google.com/maps/documentation/weather) | Paid/keyed alternative for current conditions, precipitation, alerts, hourly/daily forecast | Official docs describe up to 240 hourly forecast hours, 10 daily days, and only 24 hours of history; billing and API credentials are required. Historical values are primarily modeled output, not a station archive. Candidate for a polished live weather card, not a long-term historical/climate source. |
 | 2 | [Yandex Weather API](https://yandex.ru/dev/weather/doc/ru/concepts/api) and [pricing](https://yandex.com/dev/weather/doc/ru/concepts/pricing) | Keyed commercial candidate for current forecast and location weather | Access depends on a plan/key; published pricing page contains archived tariffs. Confirm active plan, Kazakhstan coverage, forecast range, cache/display terms, and whether any historical archive is actually included. Do not assume Yandex weather is free or open data. |
+| 2 | [Google DeepMind WeatherNext 3](https://developers.google.com/weathernext/guides/models) | Hourly initialized global ensemble, 15-day synoptic-cycle forecasts, high-resolution temperature and gridded precipitation/wind/cloud context; historical forecast archive for backtests | New as of Aug 2026; access through BigQuery, Earth Engine, or GCS with onboarding/terms and likely Cloud costs, unlike no-key APIs. 5 km station-targeted temperature and ~10 km gridded surface products do not resolve the 500 m map. Separate recent/future experimental real-time data terms from CC BY 4.0 data at least one hour old; forecasts are not official warnings. See [`weather/source-card.md`](docs/enrichment/weather/source-card.md). |
+| 3 | [Google Satellite Embedding V1 (AlphaEarth Foundations)](https://developers.google.com/earth-engine/datasets/catalog/GOOGLE_SATELLITE_EMBEDDING_V1_ANNUAL) | Annual 10 m multisensor surface embeddings (2017–2024) for a future labeled land-cover or urban-change classification experiment | 64D embeddings are not ready-made semantic classes or interpretable city indicators. Requires Earth Engine, local ground-truth labels, spatial validation, and terms review. Use as map research only, never substitute an embedding change score for measured AQI, population, green-space area, or project impact. |
 | 3 | [OpenAQ API](https://docs.openaq.org/) and local monitoring network owners | Air-quality station metadata and measurements that may contextualize `e2` | Verify active Astana station coverage, pollutants, quality flags, timestamp gaps, licensing, and actual observations. Forecast/model grids and station observations must remain distinct. A station is not a district-wide average. |
+| 2 | [AirKZ / Kazhydromet interactive map](https://www.kazhydromet.kz/ru/post/1076) | Locally authoritative hourly-updated public air monitoring context | App/map visibility is not API or scraping permission. Request supported feed/export, station/pollutant metadata, QA flags, history, and reuse terms. Keep separate from low-cost sensors and the baseline AQI score. |
+| 2 | [AirKaz.org community monitor feed](https://aqicn.org/network/kz-airkaz/) | Possible neighborhood PM2.5 hotspot context if live Astana station coverage is confirmed | Community low-cost sensors can add coverage but have higher uncertainty than reference monitors. Verify active Astana stations, API rights, sensor/calibration, humidity corrections, gaps. Do not blend with regulatory AQI without a documented method. |
+| 3 | [IQAir / AirVisual API](https://www.iqair.com/air-quality-monitors/api) | Optional city-level AQI and weather widget | Free keyed tier is limited to city-level overall AQI/weather; station/pollutant details are paid. Verify Astana response and show AQI scale/source/update/terms. No district mapping without entitled station coverage. |
 | 2 | [OpenStreetMap](https://www.openstreetmap.org/) | Roads, paths, mapped parks, stops, and POIs to render/contextualize | Coverage and tagging are community-maintained and uneven. OSM is ODbL: provide required attribution, follow database share-alike terms for derived databases, and do not assume the public tile service is a production tile API. Keep OSM-derived data separable and document the chosen extraction/license path. |
 | 3 | Astana environment and utility operators / city agencies | AQI/PM station observations (`e2`), outage duration (`c1`), service-request resolution (`c2`), lighting/camera inventory (`b1`), traffic counts/speeds (`t1`) | Discovery required. Ask for aggregate machine-readable records, field definitions, coverage, update cadence, and reuse terms. Do not infer missing values from unrelated data. |
 
 Candidate links are starting points, not confirmation that a dataset is current,
 complete, accessible, or licensed for our intended use. Record the date each
 source is checked; portal contents and policies can change.
+
+### DeepMind research opportunities checked 2026-09-23
+
+- **WeatherNext 3 — pursue as a data-source evaluation.** Google documents
+  global hourly model initialization, up to 15 days on synoptic cycles, 5 km
+  station-targeted temperature/dewpoint and roughly 10 km gridded precipitation
+  and other surface variables. Access is through BigQuery, Earth Engine, or
+  Cloud Storage, with distinct experimental terms for recent/future forecast
+  data and CC BY 4.0 for data at least one hour old. It is too coarse to
+  resolve a 500 m district grid, and Google explicitly says it is not an
+  official warning source. Evaluate a one-time Astana sample and costs against
+  Kazhydromet and Open-Meteo before choosing an adapter. [Model docs](https://developers.google.com/weathernext/guides/models)
+- **AlphaEarth Foundations — add to the GIS research backlog.** Google's
+  Satellite Embedding V1 offers annual global 10 m 64-dimensional learned
+  vectors from 2017–2024, cataloged under CC BY 4.0. These are not categorical
+  land-cover labels; local labeled examples and spatial holdout validation are
+  needed before deriving parks, built-up change, or other classes. Useful as a
+  research input where local field labels exist, not as direct evidence for
+  city QoL indicators. [Dataset catalog](https://developers.google.com/earth-engine/datasets/catalog/GOOGLE_SATELLITE_EMBEDDING_V1_ANNUAL)
+- **AlphaEvolve — no application/data integration.** The cited announcement
+  describes an LLM coding agent that evolves candidate algorithms against
+  automated evaluators, including internal infrastructure and research
+  examples. It supplies neither local city data nor a weather/geospatial API.
+  Its general evaluation-driven optimization idea is relevant only to a
+  separately benchmarked developer experiment; keep production scoring
+  deterministic and reviewed. [DeepMind announcement](https://deepmind.google/blog/alphaevolve-a-gemini-powered-coding-agent-for-designing-advanced-algorithms/)
 
 ## Audit result (2026-09-23)
 
@@ -94,6 +125,14 @@ remain under evaluation; notes are in
 [`population-terrain/research.md`](docs/enrichment/population-terrain/research.md).
 These are evidence-based blockers, not permission to substitute OSM tags,
 screenshots, or synthetic data as measured facts.
+
+Air-quality research found useful local leads: Kazhydromet says state results
+are public and updated hourly in AirKZ/app/map; AirKaz.org provides a separate
+community sensor feed whose low-cost readings have higher uncertainty; IQAir's
+free keyed tier offers city-level overall AQI/weather while station and
+pollutant details are paid-tier. No live API is connected: verify Astana
+coverage, terms, station provenance, AQI scale, and freshness. Keep networks
+separate and do not use them to overwrite baseline `e2`.
 
 ### Weather, precipitation, and time horizons
 

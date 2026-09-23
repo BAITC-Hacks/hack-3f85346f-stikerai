@@ -26,11 +26,20 @@ docker compose exec backend python -m app.seed
 - Frontend: http://localhost:5173
 - Swagger: http://localhost:8000/docs
 - Health: http://localhost:8000/api/health
+- Public Signals demo: http://localhost:8000/api/signals/proposals
+- MiroFish capability: http://localhost:8000/api/mirofish/capability (disabled by default)
 
 Изменения исходников подхватываются автоматически. Остановка: `docker compose down`.
 После изменения зависимостей повторите запуск с `--build`.
 Для настройки портов скопируйте `.env.example` в `.env`.
 Compose предназначен для локальной разработки.
+
+Блок «Предложения жителей» использует вымышленные агрегаты для демонстрации
+интерфейса и подавления малых групп. Это не реальные сообщения и не опрос.
+Источники социальных сетей не подключены; внешний MiroFish gateway выключен
+по умолчанию. Публичный видеоплеер загружается только после нажатия и не
+анализируется приложением. Подробнее: [план Public Signals и MiroFish](MiroFish_Local_Opinion_Plan.md)
+и [карта гражданских данных](docs/enrichment/civic-evidence-map.md).
 
 ## Структура
 
