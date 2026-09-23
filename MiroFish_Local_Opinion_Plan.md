@@ -1,6 +1,6 @@
 # Astana public opinion and MiroFish integration plan
 
-**Status:** research-backed proposal; no social-network data has been collected.
+**Status:** synthetic MVP built; no social-network data has been collected.
 **Purpose:** monitor public reactions to specific Astana city proposals and
 explore scenario outcomes without changing the existing synthetic dataset,
 indicator values, or scoring rules.
@@ -24,6 +24,40 @@ itself as an agent-based social simulation using LLM-generated personas,
 behavior, and reports; its own project discussion cautions that the current
 implementation does not guarantee calibrated opinion drift, confidence, or
 causal validity ([project FAQ](https://github.com/666ghj/MiroFish/issues/726)).
+
+## Current implementation status
+
+- **Built:** demo-only proposal and aggregate API; proposal-centered dashboard
+  panel; k=5 suppression; source provenance, uncertainty and synthetic-data
+  warning; source-card and language-review templates; an opt-in MiroFish
+  gateway adapter that accepts only a privacy-reviewed numeric brief.
+- **Not connected:** platform collectors, live language/stance analysis,
+  persistence for real source runs, a MiroFish gateway endpoint/instance, or a
+  historical backtest. `.env.example` works for the local demo and leaves
+  external integrations disabled.
+- **Why:** provider access and data rights are not approved, Kazakhstan
+  personal-data/legal review is outstanding, and MiroFish upstream does not
+  provide the single-call gateway contract used by the adapter. UI values are
+  invented demo fixtures, not a public-opinion sample.
+- **Implementation paths:** `backend/app/api/public_signals.py`,
+  `frontend/src/PublicSignalsPanel.tsx`,
+  `backend/app/services/mirofish.py`, and
+  `docs/enrichment/public-signals/`.
+
+### Related Google DeepMind opportunities
+
+- **WeatherNext 3:** strong new forecast-source candidate for weather and
+  precipitation context, with approximately 5–10 km support and cloud-based
+  access. Assess one Astana sample, terms, onboarding and costs; do not treat it
+  as district-scale truth or official warnings. [Model docs](https://developers.google.com/weathernext/guides/models).
+- **AlphaEarth Foundations:** potential 10 m annual satellite-embedding input
+  for a locally labeled land-cover/change experiment. It supplies
+  64-dimensional learned vectors rather than ready-to-use classes, and needs
+  Earth Engine access and local spatial validation. [Earth Engine catalog](https://developers.google.com/earth-engine/datasets/catalog/GOOGLE_SATELLITE_EMBEDDING_V1_ANNUAL).
+- **AlphaEvolve:** not a city-data or forecasting service. Its
+  evaluation-driven algorithm search could inspire a benchmarked engineering
+  experiment, but there is no planned runtime integration. Keep production
+  scoring deterministic and reviewed. [DeepMind announcement](https://deepmind.google/blog/alphaevolve-a-gemini-powered-coding-agent-for-designing-advanced-algorithms/).
 
 ## Product question and unit of analysis
 

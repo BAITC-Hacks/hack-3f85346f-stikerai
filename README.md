@@ -29,7 +29,7 @@
 
 ### Инфраструктура
 
-Docker Compose объединяет frontend, backend, PostgreSQL и одноразовый сервис миграции. В GitHub Actions настроены тесты, проверка актуальности типов, сборка frontend и сборка Docker-образов.
+Docker Compose объединяет frontend, backend, PostgreSQL и одноразовые сервисы миграции и загрузки датасета. В GitHub Actions настроены тесты, проверка актуальности типов, сборка frontend и сборка Docker-образов.
 
 ## 2. Как работает решение
 
@@ -92,10 +92,9 @@ git clone https://github.com/BAITC-Hacks/hack-3f85346f-stikerai.git
 cd hack-3f85346f-stikerai
 docker compose up --build -d
 docker compose ps
-docker compose exec backend python -m app.seed
 ```
 
-Seed создаёт датасет при первом вызове; повторный запуск сохраняет существующую версию.
+Compose автоматически запускает seed после миграций и до API. Seed создаёт датасет при первом вызове; повторный запуск сохраняет существующую версию.
 
 Адреса:
 
@@ -266,3 +265,22 @@ API-маршруты, настройка `OPENAI_API_KEY` / `OPENAI_MODEL`, по
 Ссылка на публично развёрнутое приложение в текущем репозитории не указана. Для проверки используйте локальный запуск выше.
 
 Репозиторий: [BAITC-Hacks/hack-3f85346f-stikerai](https://github.com/BAITC-Hacks/hack-3f85346f-stikerai).
+
+## Общественные сигналы и городской контекст
+
+Панель «Предложения жителей» получает синтетические демонстрационные сводки из
+`GET /api/signals/proposals` и `GET /api/signals/proposals/{id}/aggregates`.
+Малые группы скрываются. Эти данные не отражают мнение жителей и не влияют на Score.
+Блок «Астана сейчас» загружает сторонний плеер только после нажатия.
+
+`GET /api/datasets/current` возвращает текущий датасет и базовый Score.
+`POST /api/scenarios/{id}/evaluate` запускает объяснение уже сохранённого расчёта
+через тот же защищённый механизм, что и `/explanation`; ответ содержит статус
+Explanation. Сохранение решений и submit требуют `expected_revision`, как описано
+в [руководстве интеграции](docs/integration.md).
+
+Опциональный [MiroFish-адаптер](docs/mirofish-adapter.md) выключен по умолчанию.
+Он принимает проверенную агрегированную сводку и использует настраиваемый шлюз.
+См. также [карту источников](docs/enrichment/civic-evidence-map.md),
+[исследование общественных сигналов](docs/enrichment/public-signals/README.md)
+и [настройку AI-адаптеров](docs/openai-evaluation.md).

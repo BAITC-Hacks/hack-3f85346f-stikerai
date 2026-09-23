@@ -55,6 +55,49 @@ def completed(client):
     return url, response.json()
 
 
+def test_merged_routes_preserve_catalog_and_scenario_ownership(client):
+    catalog = client.get('/api/catalog').json()
+    current = client.get('/api/datasets/current').json()
+    assert current['dataset'] == catalog['dataset']
+    assert current['baseline_score'] == catalog['baseline']['baseline_score']
+    url, result = completed(client)
+    response = client.post(url + '/evaluate')
+    assert response.status_code == 200
+    assert response.json()['status'] == 'failed'  # no AI key, saved numbers remain
+    assert client.get(url + '/result').json() == result
+    client.cookies.clear()
+    assert client.post(url + '/evaluate').status_code == 401
+    assert client.post('/api/session').status_code == 200
+    assert client.post(url + '/evaluate').status_code == 404
+    routes = [(method, route.path) for route in app.routes
+              for method in getattr(route, 'methods', [])]
+    assert len(routes) == len(set(routes))
+
+
+def test_public_signals_and_disabled_gateway(client, monkeypatch):
+    monkeypatch.setenv('MIROFISH_ENABLED', 'false')
+    proposals = client.get('/api/signals/proposals').json()
+    assert len(proposals) == 2 and all(row['is_demo'] for row in proposals)
+    for proposal in proposals:
+        response = client.get(f"/api/signals/proposals/{proposal['id']}/aggregates")
+        assert response.status_code == 200
+        cells = response.json()['aggregates']
+        assert any(cell['suppressed'] for cell in cells)
+        assert all(cell['count'] is None if cell['suppressed'] else cell['count'] >= 5 for cell in cells)
+    assert client.get('/api/signals/proposals/unknown/aggregates').status_code == 404
+    assert client.get('/api/mirofish/capability').json()['state'] == 'disabled'
+    assert client.post('/api/mirofish/scenario', json={}).status_code == 422
+    brief = {"proposal_text": "Park renewal", "evidence_brief": {
+        "review_status": "approved", "reviewer_role": "researcher",
+        "reviewed_at": "2026-09-23T00:00:00Z", "aggregates": [{
+            "source_id": "demo", "metric": "support", "value": 10, "unit": "count",
+            "period": "demo", "geography": "city", "sample_size": 10,
+            "suppression_applied": False}]}}
+    assert client.post('/api/mirofish/scenario', json=brief).status_code == 503
+    client.cookies.clear()
+    assert client.post('/api/mirofish/scenario', json={}).status_code == 401
+
+
 def test_catalog_save_reload_preview_submit_and_copy(client, engine):
     catalog, scenario = start(client)
     assert len(catalog['districts']) == 5 and len(catalog['initiatives']) == 14
@@ -139,9 +182,12 @@ def test_running_lease_can_be_recovered(client, engine):
 def test_structured_provider_contract(monkeypatch):
     monkeypatch.setenv('OPENAI_API_KEY', 'test-only')
     monkeypatch.setenv('OPENAI_MODEL', 'test-model')
+    monkeypatch.setenv('OPENAI_BASE_URL', 'https://gateway.example/v1/')
+    monkeypatch.setenv('OPENAI_TIMEOUT_SECONDS', '20')
     output = ExplanationText(summary='Готово', strengths=[], risks=[], consequences=[], recommendations=[])
     def handler(request):
         import json
+        assert str(request.url) == 'https://gateway.example/v1/responses'
         body = json.loads(request.content)
         assert body['text']['format']['strict'] is True
         assert body['store'] is False

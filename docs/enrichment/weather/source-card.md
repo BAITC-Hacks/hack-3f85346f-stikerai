@@ -80,6 +80,31 @@ reuse license/redistribution grant was not established in this research pass.
 | [Google Maps Platform Weather API](https://developers.google.com/maps/documentation/weather/overview) | Current conditions, hourly forecast up to 240 h, daily forecast up to 10 days, hourly history only up to 24 h. Contains precip amount/type, thunderstorm probability, etc. | Billing must be enabled and every request must use API key or OAuth. Pay-as-you-go SKU. Official docs call it hyperlocal but the overview does not declare a gridded spatial resolution. Weather API output must carry `Source: Includes weather data from Google`; Google Maps content has attribution and caching/service restrictions. See [billing](https://developers.google.com/maps/documentation/weather/usage-and-billing), [policies](https://developers.google.com/maps/documentation/weather/policies), [reference](https://developers.google.com/maps/documentation/weather/reference/rest). | Candidate only if product needs live keyed weather and an owner funds/operates it. Poor fit for a public static, redistributable research snapshot: billing, secret management, content restrictions, and only 24h history. |
 | [Yandex Weather API](https://yandex.com/dev/weather/doc/en/concepts/api) | Current conditions and 10-day forecast on business plans; historical facts via separately priced platform/export. | API requires a key in `X-Yandex-Weather-Key`. Current docs list a no-charge “Weather on your site” tier at 50 requests/day with current weather and the next two periods, a test tier with 7 days for 30 days (5,000/day), and paid prepaid business tiers. Page also includes clearly archived tariff tables. Separately offered historical archive is manager-priced, 25 km since 1950 / 2 km since 2022, export after payment. Publicly displayed data need branding. No free/open redistributable data terms were established here. See [current plans and historical limits](https://yandex.com/dev/weather/doc/en/concepts/pricing) and [key instructions](https://yandex.com/dev/weather/doc/en/concepts/api). | Do not select absent a product/terms review and server-side key handling. Historical model archive is potentially useful for research but not a no-key workflow. |
 
+## New Google DeepMind candidate: WeatherNext 3
+
+**Decision:** highest-priority new candidate for a future weather adapter; not
+currently wired into the app. The official docs describe a global AI ensemble
+initialized hourly, with up to 15 days for 6-hourly cycles and 48 hours for
+interim hourly runs. Station-targeted 2 m temperature/dewpoint are about 5 km;
+gridded surface wind, precipitation, cloud, and radiation products are about
+10 km. Available via BigQuery, Earth Engine, and Cloud Storage, with 2026
+historical forecasts and backfill underway for earlier years. That makes it
+more attractive than the old city-point snapshot for short-range precipitation
+context and future backtesting, but still far coarser than the proposed city
+display grid and not a local station record. See [WeatherNext 3 model and
+resolution docs](https://developers.google.com/weathernext/guides/models).
+
+Access is not equivalent to Open-Meteo's no-key API: compare the Google Cloud
+account, allowlist/onboarding, query/storage cost, BigQuery/Earth Engine
+eligibility, data retention, and output terms before selecting an access path.
+Recent/future predictions are covered by experimental real-time weather terms;
+data at least one hour old transitions to CC BY 4.0, according to the docs.
+Forecasts are explicitly experimental and not official warnings. Always defer
+to Kazhydromet and emergency authorities for warnings. Cite the source and keep
+issue time, valid time, cycle, resolution, variable, ensemble/statistic, and
+license class in any archived sample. Do not resample a 5–10 km model to 500 m
+and imply new local detail.
+
 ## Decision for downstream agents
 
 1. Use only the Open-Meteo sample for an offline, non-commercial contextual

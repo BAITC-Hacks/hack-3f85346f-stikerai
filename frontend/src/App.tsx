@@ -1,3 +1,6 @@
+import { PublicSignalsPanel } from './PublicSignalsPanel'
+import { CityLiveView } from './CityLiveView'
+import './civic-context.css'
 import { useEffect, useRef, useState } from 'react'
 import { api, ApiError } from './api'
 import type { CalculationRead, CatalogRead, DecisionSelect, Direction, ExplanationRead, Metric, ScenarioRead } from './types/domain'
@@ -263,6 +266,8 @@ export default function App() {
             {!!result?.contributions.length && <details className="contributions"><summary>Эффекты мероприятий и синергий</summary><p>Добавки после учёта лагов, до ограничения показателей диапазоном 0–100.</p>{result.contributions.map((entry, index) => <p key={index}><strong>{entry.label}</strong> · {catalog.districts.find(d => d.id === entry.district_id)?.name}: {Object.entries(entry.effects).map(([key, value]) => `${key.toUpperCase()} ${delta(value!)}`).join(', ')}</p>)}</details>}
           </section>}
         </>}
+      <PublicSignalsPanel />
+        <CityLiveView />
       </main><footer className="footer"><span>STIKERAI · ГОРОДСКАЯ ЛАБОРАТОРИЯ</span><span>Данные синтетические · Учебная симуляция</span></footer></div>
     </div>
   )
