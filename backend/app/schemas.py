@@ -1,0 +1,148 @@
+"""Wire contracts; metrics use lowercase datadoc.md codes (T1 -> t1)."""
+from datetime import datetime
+from typing import Annotated
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from app.domain import Direction, InitiativeScope, MAX_BUDGET, Metric, RuleKind, RuleScope, ScenarioStatus
+
+Indicator = Annotated[float, Field(ge=0, le=100, allow_inf_nan=False)]
+Delta = Annotated[float, Field(ge=-100, le=100, allow_inf_nan=False)]
+CityScore = Annotated[float, Field(le=100, allow_inf_nan=False)]
+Money = Annotated[int, Field(ge=0, le=MAX_BUDGET, strict=True)]
+
+
+class Contract(BaseModel):
+    model_config = ConfigDict(from_attributes=True, extra="forbid", str_strip_whitespace=True)
+
+
+class Indicators(Contract):
+    t1: Indicator
+    t2: Indicator
+    e1: Indicator
+    e2: Indicator
+    s1: Indicator
+    s2: Indicator
+    b1: Indicator
+    b2: Indicator
+    c1: Indicator
+    c2: Indicator
+
+
+class Impact(Contract):
+    t1: Delta
+    t2: Delta
+    e1: Delta
+    e2: Delta
+    s1: Delta
+    s2: Delta
+    b1: Delta
+    b2: Delta
+    c1: Delta
+    c2: Delta
+
+
+class DatasetRead(Contract):
+    id: UUID
+    version: str
+    name: str
+    description: str
+    initial_budget: Money
+    horizon_quarters: int
+    scoring_version: str
+    metric_weights: dict[Metric, float]
+    created_at: datetime
+
+
+class DistrictRead(Indicators):
+    id: UUID
+    dataset_id: UUID
+    code: str
+    name: str
+    population_share: Annotated[float, Field(gt=0, le=1)]
+    created_at: datetime
+
+
+class InitiativeRead(Impact):
+    id: UUID
+    dataset_id: UUID
+    code: str
+    direction: Direction
+    scope: InitiativeScope
+    title: str
+    cost: Money
+    lag_quarters: Annotated[int, Field(ge=0)]
+    created_at: datetime
+
+
+class InitiativeRuleRead(Contract):
+    id: UUID
+    dataset_id: UUID
+    first_id: UUID
+    second_id: UUID
+    kind: RuleKind
+    scope: RuleScope
+    metric: Metric | None
+    delta: Delta | None
+    created_at: datetime
+
+
+class ScenarioCreate(Contract):
+    dataset_id: UUID
+    team_name: Annotated[str, Field(min_length=1, max_length=120)]
+
+
+class DecisionSelect(Contract):
+    initiative_id: UUID
+    district_id: UUID | None = None
+
+
+class DecisionsReplace(Contract):
+    decisions: Annotated[list[DecisionSelect], Field(max_length=5)]
+
+
+class DecisionRead(Contract):
+    id: UUID
+    scenario_id: UUID
+    dataset_id: UUID
+    initiative_id: UUID
+    district_id: UUID | None
+    created_at: datetime
+
+
+class ScenarioRead(Contract):
+    id: UUID
+    dataset_id: UUID
+    team_name: str
+    status: ScenarioStatus
+    created_at: datetime
+    submitted_at: datetime | None
+    initial_budget: Money
+    spent_budget: Money
+    remaining_budget: Money
+    decisions: list[DecisionRead]
+
+
+class DistrictResultRead(Indicators):
+    evaluation_id: UUID
+    district_id: UUID
+    dataset_id: UUID
+
+
+class EvaluationRead(Contract):
+    id: UUID
+    scenario_id: UUID
+    dataset_id: UUID
+    baseline_score: CityScore
+    final_score: CityScore
+    scoring_version: str
+    ai_model: str
+    prompt_version: str
+    summary: str
+    strengths: list[str]
+    risks: list[str]
+    consequences: list[str]
+    recommendations: list[str]
+    created_at: datetime
+    districts: list[DistrictResultRead]

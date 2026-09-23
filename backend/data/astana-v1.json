@@ -1,0 +1,40 @@
+{
+  "version": "astana-synthetic-v1",
+  "name": "Аким на 5 часов — синтетическая Астана",
+  "description": "Synthetic simulation inputs transcribed from datadoc.md; not measured city data.",
+  "initial_budget": 100,
+  "horizon_quarters": 8,
+  "scoring_version": "astana-qol-v1",
+  "metric_weights": {"t1": 0.10, "t2": 0.10, "e1": 0.09, "e2": 0.11, "s1": 0.11, "s2": 0.11, "b1": 0.09, "b2": 0.09, "c1": 0.10, "c2": 0.10},
+  "districts": [
+    {"code": "esil", "name": "Есиль", "population_share": 0.27, "t1": 45, "t2": 62, "e1": 68, "e2": 72, "s1": 48, "s2": 55, "b1": 78, "b2": 60, "c1": 75, "c2": 70},
+    {"code": "almaty", "name": "Алматы", "population_share": 0.24, "t1": 40, "t2": 75, "e1": 50, "e2": 55, "s1": 60, "s2": 65, "b1": 62, "b2": 52, "c1": 50, "c2": 60},
+    {"code": "saryarka", "name": "Сарыарка", "population_share": 0.20, "t1": 50, "t2": 70, "e1": 42, "e2": 40, "s1": 62, "s2": 68, "b1": 58, "b2": 55, "c1": 45, "c2": 55},
+    {"code": "baikonur", "name": "Байконур", "population_share": 0.13, "t1": 52, "t2": 68, "e1": 55, "e2": 50, "s1": 58, "s2": 60, "b1": 52, "b2": 58, "c1": 55, "c2": 58},
+    {"code": "nura", "name": "Нура", "population_share": 0.16, "t1": 55, "t2": 40, "e1": 45, "e2": 65, "s1": 38, "s2": 35, "b1": 55, "b2": 50, "c1": 60, "c2": 50}
+  ],
+  "initiatives": [
+    {"code": "M1", "direction": "transport", "title": "Выделенные полосы для автобусов", "scope": "district", "cost": 18, "lag_quarters": 2, "effects": {"t1": 6, "t2": 9}},
+    {"code": "M2", "direction": "transport", "title": "Умные светофоры", "scope": "city", "cost": 22, "lag_quarters": 2, "effects": {"t1": 4, "b2": 3}},
+    {"code": "M3", "direction": "transport", "title": "Линия ЛРТ / расширение", "scope": "district", "cost": 30, "lag_quarters": 4, "effects": {"t1": 16, "t2": 20, "e2": 4}},
+    {"code": "M4", "direction": "ecology", "title": "Парк / сквер", "scope": "district", "cost": 15, "lag_quarters": 2, "effects": {"e1": 12, "e2": 3, "b1": 2}},
+    {"code": "M5", "direction": "ecology", "title": "Перевод частного сектора на чистое топливо", "scope": "district", "cost": 25, "lag_quarters": 3, "effects": {"e2": 14, "c1": 4}},
+    {"code": "M6", "direction": "ecology", "title": "Городская программа озеленения и ветрозащитных полос", "scope": "city", "cost": 20, "lag_quarters": 4, "effects": {"e1": 5, "e2": 3}},
+    {"code": "M7", "direction": "social", "title": "Школа + детсад", "scope": "district", "cost": 24, "lag_quarters": 3, "effects": {"s1": 16}},
+    {"code": "M8", "direction": "social", "title": "Центр семейного здоровья / поликлиника", "scope": "district", "cost": 20, "lag_quarters": 3, "effects": {"s2": 14}},
+    {"code": "M9", "direction": "social", "title": "Дворовые спорт-хабы", "scope": "district", "cost": 10, "lag_quarters": 1, "effects": {"s1": 3, "s2": 3, "b1": 3}},
+    {"code": "M10", "direction": "safety", "title": "Освещение и камеры", "scope": "district", "cost": 12, "lag_quarters": 1, "effects": {"b1": 12, "b2": 2}},
+    {"code": "M11", "direction": "safety", "title": "Безопасные переходы и школьные зоны", "scope": "district", "cost": 10, "lag_quarters": 1, "effects": {"b2": 12, "t1": -2}},
+    {"code": "M12", "direction": "services", "title": "Единая цифровая платформа обращений", "scope": "city", "cost": 14, "lag_quarters": 1, "effects": {"c2": 5}},
+    {"code": "M13", "direction": "services", "title": "Модернизация тепло- и водосетей", "scope": "district", "cost": 28, "lag_quarters": 4, "effects": {"c1": 18, "e2": 2}},
+    {"code": "M14", "direction": "services", "title": "Аварийные бригады ЖКХ + раннее оповещение", "scope": "city", "cost": 16, "lag_quarters": 1, "effects": {"c1": 5, "c2": 2}}
+  ],
+  "rules": [
+    {"first": "M1", "second": "M2", "kind": "synergy", "scope": "first_district", "metric": "t1", "delta": 2},
+    {"first": "M10", "second": "M12", "kind": "synergy", "scope": "first_district", "metric": "b1", "delta": 2},
+    {"first": "M5", "second": "M6", "kind": "synergy", "scope": "first_district", "metric": "e2", "delta": 2},
+    {"first": "M1", "second": "M3", "kind": "conflict", "scope": "global"},
+    {"first": "M4", "second": "M7", "kind": "conflict", "scope": "same_district"},
+    {"first": "M5", "second": "M13", "kind": "conflict", "scope": "same_district"}
+  ]
+}
