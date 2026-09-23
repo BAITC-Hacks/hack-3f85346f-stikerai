@@ -6,6 +6,7 @@ import time
 import httpx
 
 from app.schemas import ExplanationText
+from app.services.openai_analysis import _configured_timeout, _validate_base_url
 
 PROMPT_VERSION = "city-explanation-v1"
 
@@ -14,6 +15,10 @@ def request_explanation(payload: dict, *, transport=None) -> ExplanationText:
     key, model = os.getenv("OPENAI_API_KEY"), os.getenv("OPENAI_MODEL")
     if not key or not model:
         raise RuntimeError("AI_NOT_CONFIGURED")
+    base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
+    _validate_base_url(base_url)
+    # Two attempts must fit inside the existing 90-second explanation lease.
+    timeout = min(_configured_timeout(), 40)
     body = {
         "model": model, "store": False, "max_output_tokens": 2200,
         "instructions": (
@@ -28,10 +33,10 @@ def request_explanation(payload: dict, *, transport=None) -> ExplanationText:
         "text": {"format": {"type": "json_schema", "name": "city_explanation", "strict": True,
                              "schema": ExplanationText.model_json_schema()}},
     }
-    with httpx.Client(timeout=20, transport=transport) as client:
+    with httpx.Client(timeout=timeout, transport=transport, follow_redirects=False) as client:
         for attempt in range(2):
             try:
-                response = client.post("https://api.openai.com/v1/responses", json=body,
+                response = client.post(f"{base_url}/responses", json=body,
                                        headers={"Authorization": f"Bearer {key}"})
                 response.raise_for_status()
                 data = response.json()

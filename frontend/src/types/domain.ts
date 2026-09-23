@@ -32,6 +32,13 @@ export type CopyRequest = {
   request_id: string
 }
 
+export type DatasetCurrentRead = {
+  dataset: DatasetRead
+  districts: Array<DistrictRead>
+  initiatives: Array<InitiativeRead>
+  baseline_score: number
+}
+
 export type DatasetRead = {
   id: string
   version: string
@@ -63,6 +70,18 @@ export type DecisionsReplace = {
 }
 
 export type Direction = "transport" | "ecology" | "social" | "safety" | "services"
+
+export type DistrictPreviewRead = {
+  district_id: string
+  district_code: string
+  district_name: string
+  population_share: number
+  baseline_score: number
+  projected_score: number
+  score_delta: number
+  baseline_indicators: Indicators
+  projected_indicators: Indicators
+}
 
 export type DistrictProjection = {
   district_id: string
@@ -220,6 +239,15 @@ export type RuleScope = "global" | "same_district" | "first_district"
 export type ScenarioCreate = {
   dataset_id: string
   team_name: string
+}
+
+export type ScenarioPreviewRead = {
+  current_cost: number
+  remaining_budget: number
+  baseline_score: number
+  projected_score: number
+  score_delta: number
+  districts: Array<DistrictPreviewRead>
 }
 
 export type ScenarioRead = {

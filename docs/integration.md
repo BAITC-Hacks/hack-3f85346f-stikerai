@@ -4,7 +4,6 @@
 
 ```sh
 docker compose up --build -d
-docker compose exec backend python -m app.seed
 ```
 
 Откройте `http://localhost:5173`, задайте название команды и нажмите «Начать сценарий».
@@ -69,3 +68,17 @@ LLM не меняет Score; текстовые рекомендации не я
 Из `frontend`: `npm run build`, `npm run test:e2e`.
 CI повторяет API-тесты с PostgreSQL, запускает браузерный путь и Docker smoke test.
 Реальные AI-запросы требуют отдельно настроенных реквизитов и не включены в тесты.
+
+## Дополнительные маршруты
+
+- `GET /api/datasets/current` — текущий датасет, районы, мероприятия и базовый Score.
+- `POST /api/scenarios/{id}/evaluate` — алиас `/explanation`, с теми же проверками
+  сессии и тем же ответом ExplanationRead; численный результат уже должен быть сохранён.
+- `GET /api/signals/proposals` и `GET /api/signals/proposals/{id}/aggregates` —
+  публичные синтетические сводки. Малые группы возвращают `count: null`.
+- `GET /api/mirofish/capability` — состояние настройки без вызова провайдера.
+- `POST /api/mirofish/scenario` — опциональный шлюз, требует сессии и заголовка записи.
+
+Для AI доступны `OPENAI_BASE_URL` и `OPENAI_TIMEOUT_SECONDS`. URL должен быть HTTPS
+(локально разрешён HTTP); редиректы отключены. В активном адаптере тайм-аут одной
+попытки ограничен 40 секундами, значение по умолчанию в Compose — 20.

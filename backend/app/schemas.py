@@ -76,6 +76,13 @@ class InitiativeRead(Impact):
     created_at: datetime
 
 
+class DatasetCurrentRead(Contract):
+    dataset: DatasetRead
+    districts: list[DistrictRead]
+    initiatives: list[InitiativeRead]
+    baseline_score: CityScore
+
+
 class InitiativeRuleRead(Contract):
     id: UUID
     dataset_id: UUID
@@ -214,3 +221,24 @@ class CatalogRead(Contract):
     initiatives: list[InitiativeRead]
     rules: list[InitiativeRuleRead]
     baseline: CalculationRead
+
+
+class DistrictPreviewRead(Contract):
+    district_id: UUID
+    district_code: str
+    district_name: str
+    population_share: float
+    baseline_score: CityScore
+    projected_score: CityScore
+    score_delta: float
+    baseline_indicators: Indicators
+    projected_indicators: Indicators
+
+
+class ScenarioPreviewRead(Contract):
+    current_cost: Money
+    remaining_budget: Money
+    baseline_score: CityScore
+    projected_score: CityScore
+    score_delta: float
+    districts: list[DistrictPreviewRead]
