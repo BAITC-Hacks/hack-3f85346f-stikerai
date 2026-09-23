@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from app.api.context import router as context_router
 from app.api.health import router as health_router
 from app.api.map import router as map_router
 from app.api.mirofish import router as mirofish_router
@@ -13,6 +14,8 @@ from app.services.scenarios import ScenarioError
 app = FastAPI(title="StikerAI API", version="0.1.0")
 app.include_router(health_router, prefix="/api")
 app.include_router(simulator_router, prefix="/api")
+
+app.include_router(context_router, prefix="/api")
 app.include_router(public_signals_router, prefix="/api")
 app.include_router(mirofish_router, prefix="/api")
 app.include_router(scenarios_router, prefix="/api")

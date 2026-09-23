@@ -1,0 +1,1 @@
+[out:json][timeout:60];(node["amenity"="school"](51.0,71.2,51.3,71.7);way["amenity"="school"](51.0,71.2,51.3,71.7);relation["amenity"="school"](51.0,71.2,51.3,71.7););out center meta tags;

@@ -1,3 +1,4 @@
+import { CityContextMap } from './CityContextMap'
 import './styles.css'
 import './futuristic.css'
 import './futuristic-light.css'
@@ -286,7 +287,7 @@ export default function App() {
             {!!result?.contributions.length && <details className="contributions"><summary>{t("Эффекты мероприятий и синергий")}</summary><p>{t("Добавки после учёта лагов, до ограничения показателей диапазоном 0–100.")}</p>{result.contributions.map((entry, index) => <p key={index}><strong>{t(entry.label)}</strong> · {t(catalog.districts.find(d => d.id === entry.district_id)?.name)}: {Object.entries(entry.effects).map(([key, value]) => `${key.toUpperCase()} ${delta(value!)}`).join(', ')}</p>)}</details>}
           </section>}
         </>}
-      <PublicSignalsPanel />
+      <CityContextMap /><PublicSignalsPanel />
         <CityLiveView />
       </main><footer className="footer"><span>{t("STIKERAI · ГОРОДСКАЯ ЛАБОРАТОРИЯ")}</span><span>{t("Данные синтетические · Учебная симуляция")}</span></footer></div>
     </div>

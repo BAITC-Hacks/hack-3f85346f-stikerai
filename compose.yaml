@@ -79,6 +79,7 @@ services:
       - "127.0.0.1:${FRONTEND_PORT:-5173}:5173"
     environment:
       API_PROXY_TARGET: http://backend:8000
+      VITE_MAP_TILE_URL: ${VITE_MAP_TILE_URL:-}
       WATCH_USE_POLLING: "true"
       VITE_MAP_STYLE_URL: ${VITE_MAP_STYLE_URL:-https://tiles.openfreemap.org/styles/positron}
     volumes:

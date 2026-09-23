@@ -8,6 +8,10 @@ versioned Astana context layers. It is additive to the simulator dataset.
 - [`BASELINE_LOCK.md`](BASELINE_LOCK.md) records the baseline hashes.
 - A dated city-reference Open-Meteo forecast snapshot is accepted for
   non-commercial contextual demonstration, with attribution and expiry caveat.
+- A dated OpenStreetMap/Overpass snapshot of 171 Astana-area features tagged
+  `amenity=school` is accepted for map-only site reconnaissance, with ODbL
+  attribution. These are community-mapped points, not an official school
+  register or complete pilot-ready dataset.
 - Official district boundaries are **blocked**: current Astana has six
   districts versus the simulator's five synthetic profiles; no reusable
   geometry and vintage-matched crosswalk were verified.

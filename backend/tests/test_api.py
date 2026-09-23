@@ -31,6 +31,18 @@ def client(engine, monkeypatch):
     app.dependency_overrides.clear()
 
 
+def test_school_context_is_geojson_without_changing_simulation(client):
+    baseline = client.get('/api/catalog').json()['baseline']
+    response = client.get('/api/context/schools')
+    assert response.status_code == 200
+    assert response.headers['content-type'].startswith('application/geo+json')
+    snapshot = response.json()
+    assert snapshot['type'] == 'FeatureCollection'
+    assert snapshot['features'] and snapshot['source_snapshot']
+    assert all(row['geometry']['type'] == 'Point' for row in snapshot['features'])
+    assert client.get('/api/catalog').json()['baseline'] == baseline
+
+
 def start(client, request_id=None):
     catalog = client.get('/api/catalog').json()
     response = client.post('/api/scenarios', json={"dataset_id": catalog['dataset']['id'], "team_name": "Team", "request_id": str(request_id or uuid4())})

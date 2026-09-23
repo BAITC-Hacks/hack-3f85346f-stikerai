@@ -1,0 +1,13 @@
+.city-context-view { margin-top: 26px; border: 1px solid #d5d8cb; background: rgba(255,255,250,.62); padding: 22px; }
+.city-context-view .section-heading { margin-bottom: 12px; }
+.city-context-view .section-heading h2 { font-family: Georgia, serif; font-size: 28px; font-weight: 400; margin: 7px 0 0; }
+.context-source-status { color: #536343; font-size: 10px; font-weight: 800; white-space: nowrap; }
+.city-context-copy { max-width: 900px; color: #69756d; font-size: 12px; line-height: 1.6; }
+.city-context-map { z-index: 0; width: 100%; height: min(58vh, 560px); min-height: 360px; border: 1px solid #d5d8cb; background: #e5e8de; }
+.city-context-map .leaflet-popup-content { display: grid; gap: 5px; font: 12px/1.4 'DM Sans', sans-serif; }
+.city-context-map .leaflet-popup-content a { color: #88433a; }
+.city-context-meta { display: flex; flex-wrap: wrap; gap: 8px 20px; padding: 10px 0 4px; color: #65716a; font-size: 10px; }
+.city-context-meta [role="status"] { color: #a7473f; }
+.city-context-view > small { display: block; color: #858d84; font-size: 10px; line-height: 1.5; }
+.city-context-view > small a { color: #536343; }
+@media (max-width: 600px) { .city-context-view { padding: 16px; }.city-context-view .section-heading { align-items: flex-start; flex-direction: column; }.city-context-map { min-height: 330px; } }
