@@ -1,0 +1,47 @@
+{
+  "package": "astana-context-v1",
+  "status": "partial-research-release",
+  "baseline": {
+    "dataset_version": "astana-synthetic-v1",
+    "source_file": "../../astana-v1.json",
+    "source_sha256": "4e1c5198eb745b7899dd4b140c47eab3de605759da608aa6af61ee29b03cc336",
+    "data_document": "../../../../datadoc.md",
+    "data_document_sha256": "b6e0c4b6cdb45bffdb4d54a2ba8de9d43ddd0ffff029ab0941fa26f11d9580f8"
+  },
+  "created_at": "2026-09-23",
+  "crs": null,
+  "city_extent": "No accepted district geometry in this release",
+  "join_key": "district_code (not used by included weather sample)",
+  "layers": [
+    {
+      "layer_id": "weather-forecast-sample",
+      "semantic_status": "forecast",
+      "quality_status": "provisional",
+      "path": "weather/forecast-sample.json",
+      "sha256": "64d580e697ce02de01fcb4566b4f3608528763f581250b3d8414e959f93a3528",
+      "raw_response": {
+        "path": "weather/forecast-raw-response.json",
+        "sha256": "29624974bb4b7ab860a220cdaf3bdacc3e9be9205bfede6fd8f4547335c297e6"
+      },
+      "source_card": "../../../../docs/enrichment/weather/source-card.md",
+      "reference_time": "2026-09-23T10:07:33Z",
+      "valid_period": "2026-09-24 to 2026-09-25 Asia/Almaty",
+      "spatial_support": "One provider-resolved kilometer-scale model grid cell near the Astana reference point; not district-level",
+      "license": "CC BY 4.0 data; Open-Meteo free API access is non-commercial only",
+      "attribution": "Weather data by Open-Meteo.com (https://open-meteo.com/), licensed under CC BY 4.0.",
+      "transformations": "Raw API JSON retained; compact daily sample excerpted without changing values. See weather/README.md for retrieval and interpretation.",
+      "affects_simulator_score": false
+    }
+  ],
+  "research_only": [
+    "boundaries and General Plan",
+    "urban quality and facilities",
+    "population and terrain"
+  ],
+  "limitations": [
+    "This partial package contains no district geometry and no district-level observations.",
+    "The weather sample is dated and must not be displayed as current after its valid period.",
+    "Open-Meteo free API terms do not permit commercial use; recheck terms before redistribution or commercial operation.",
+    "No layer in this package changes existing indicators, weights, initiatives, population shares, or score calculation."
+  ]
+}

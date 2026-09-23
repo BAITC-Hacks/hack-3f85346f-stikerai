@@ -1,0 +1,54 @@
+{
+  "package": "astana-context-v1",
+  "layer": "weather-forecast-sample",
+  "status": "optional-context-only",
+  "retrieved_at": "2026-09-23T10:07:33Z",
+  "issue_time": null,
+  "valid_timezone": "Asia/Almaty",
+  "source": {
+    "provider": "Open-Meteo",
+    "endpoint": "https://api.open-meteo.com/v1/forecast",
+    "license": "CC-BY-4.0",
+    "attribution": "Weather data by Open-Meteo.com (https://open-meteo.com/), licensed under CC BY 4.0."
+  },
+  "raw_response_file": "forecast-raw-response.json",
+  "raw_response_sha256": "29624974bb4b7ab860a220cdaf3bdacc3e9be9205bfede6fd8f4547335c297e6",
+  "request_location": {
+    "latitude": 51.1694,
+    "longitude": 71.4491,
+    "label": "Astana city reference point; not a district centroid"
+  },
+  "resolved_model_grid_location": {
+    "latitude": 51.142353,
+    "longitude": 71.41831,
+    "elevation_m": 356
+  },
+  "provider_model_run_metadata": "Not returned in the saved API response; retrieved_at is not the model issue time.",
+  "product": "Best-match forecast response, provider/model selection is not pinned",
+  "fields": {
+    "precipitation_sum": "mm per local calendar day",
+    "precipitation_probability_max": "%; maximum hourly probability for the day",
+    "snowfall_sum": "cm per local calendar day"
+  },
+  "days": [
+    {
+      "date": "2026-09-24",
+      "precipitation_sum": 0.0,
+      "precipitation_probability_max": 2,
+      "snowfall_sum": 0.0
+    },
+    {
+      "date": "2026-09-25",
+      "precipitation_sum": 1.0,
+      "precipitation_probability_max": 61,
+      "snowfall_sum": 0.0
+    }
+  ],
+  "limitations": [
+    "Forecast output, not station observations.",
+    "One snapped model grid cell with kilometer-scale support; not district or 500 m weather.",
+    "A short-range forecast, not an eight-quarter prediction, flood-risk estimate, or climate normal.",
+    "Non-commercial sample only under the free API terms; recheck terms before commercial use.",
+    "This layer has no effect on baseline indicators or simulator scores."
+  ]
+}
