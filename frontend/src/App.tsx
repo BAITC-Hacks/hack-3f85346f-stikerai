@@ -1,269 +1,67 @@
 import { useEffect, useRef, useState } from 'react'
-import { api, ApiError } from './api'
-import type { CalculationRead, CatalogRead, DecisionSelect, Direction, ExplanationRead, Metric, ScenarioRead } from './types/domain'
-
-const directions: { id: Direction; label: string; icon: string }[] = [
-  { id: 'transport', label: 'Транспорт', icon: '↗' },
-  { id: 'ecology', label: 'Экология', icon: '✦' },
-  { id: 'social', label: 'Соцсфера', icon: '◌' },
-  { id: 'safety', label: 'Безопасность', icon: '⌁' },
-  { id: 'services', label: 'Сервисы', icon: '□' },
+import { ArrowRight, ArrowUpRight, Building2, ChevronDown, Command, Ear, Globe2, HeartHandshake, LayoutDashboard, Map, MessageSquare, Search, Settings2, SlidersHorizontal, Sparkles, Users, Vote, X, Activity, Lightbulb, RotateCcw } from 'lucide-react'
+import { useSimulator } from './hooks/useSimulator'
+import { civicSummary, useCivic } from './hooks/useCivic'
+import { citizens, districtNames, directions, fmt, initiativeNames, type DistrictCode } from './data/citizens'
+import { Dialog, Orb, PageHeading, Badge, Progress, Empty } from './components/UI'
+import { CommandCenter, GovernmentWorkbench, Results, Advisor, buildCivicContext } from './components/Government'
+import { CitizenHome, PulsePage, PetitionsPage, FundingPage, VotesPage, InitiativesPage } from './components/CivicPages'
+import { CitizenPulse, LiveActivityTicker } from './components/CitizenPulse'
+import { CityMap, DistrictCard } from './components/CityMap'
+const menu = [
+  { id: 'command', label: 'Command center', icon: LayoutDashboard }, { id: 'districts', label: 'Districts', icon: Map }, { id: 'decisions', label: 'Decisions', icon: SlidersHorizontal },
+  { id: 'pulse', label: 'City Pulse', icon: Activity }, { id: 'initiatives', label: 'Initiatives', icon: Lightbulb }, { id: 'votes', label: 'City votes', icon: Vote }, { id: 'petitions', label: 'Petitions', icon: MessageSquare }, { id: 'funding', label: 'Community funding', icon: HeartHandshake }, { id: 'advisor', label: 'AI advisor', icon: Sparkles },
 ]
-const metrics: Record<Metric, string> = {
-  t1: 'Разгрузка дорог', t2: 'Общественный транспорт', e1: 'Озеленение', e2: 'Качество воздуха',
-  s1: 'Школы и детсады', s2: 'Первичная медицина', b1: 'Безопасность улиц', b2: 'Дорожная безопасность',
-  c1: 'Надёжность ЖКХ', c2: 'Обращения жителей',
-}
-const number = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
-const fmt = (value: number) => number.format(value)
-const delta = (value: number) => `${value >= 0 ? '+' : '−'}${fmt(Math.abs(value))}`
-const storage = {
-  get(key: string) { try { return localStorage.getItem(key) } catch { return null } },
-  set(key: string, value: string) { try { localStorage.setItem(key, value) } catch { /* Session still works without local storage. */ } },
-  remove(key: string) { try { localStorage.removeItem(key) } catch { /* Optional persistence. */ } },
-}
-let sessionReady: Promise<unknown> | null = null
-function initializeSession() {
-  sessionReady ??= api('/session', 'POST').catch(error => { sessionReady = null; throw error })
-  return sessionReady
-}
-
-function BaiterekMark() {
-  return (
-    <svg viewBox="0 0 80 110" aria-hidden="true">
-      <path className="baiterek-trunk" d="M34 99L36 66L24 38M46 99L44 66L56 38M40 99V48" />
-      <path className="baiterek-branches" d="M36 66L16 28M44 66L64 28M24 38Q40 57 56 38" />
-      <circle className="baiterek-sphere" cx="40" cy="22" r="16" />
-      <path className="baiterek-base" d="M24 100H56M29 94H51" />
-    </svg>
-  )
-}
-
-function AstanaIdentity() {
-  return (
-    <div className="astana-identity" aria-label="Астана · Аким на 5 часов">
-      <div className="astana-symbol"><BaiterekMark /></div>
-      <div><strong>Астана</strong><small>АКИМ НА 5 ЧАСОВ</small></div>
-    </div>
-  )
-}
-
-function BaiterekOrbit({ score }: { score: number | null }) {
-  return (
-    <div className="baiterek-orbit">
-      <svg className="orbit-drawing" viewBox="0 0 360 340" aria-hidden="true">
-        {directions.map((decision, index) => {
-          const angle = (index * 72 - 90) * Math.PI / 180
-          return <line key={decision.id} className="orbit-spoke" x1={180 + Math.cos(angle) * 110} y1={170 + Math.sin(angle) * 110} x2={180 + Math.cos(angle) * 148} y2={170 + Math.sin(angle) * 148} />
-        })}
-        <circle className="orbit-track" cx="180" cy="170" r="104" />
-        <circle className="orbit-value" cx="180" cy="170" r="104" pathLength="100" strokeDasharray={`${score ?? 0} ${100 - (score ?? 0)}`} transform="rotate(-90 180 170)" />
-      </svg>
-      <div className="orbit-center" role="meter" aria-label="Качество жизни Астаны" aria-valuemin={0} aria-valuemax={100} aria-valuenow={score ?? undefined}>
-        <BaiterekMark />
-        <div className="orbit-score"><strong>{score === null ? '—' : fmt(score)}</strong><span>/ 100</span></div>
-        <small>QUALITY OF LIFE</small>
-      </div>
-      <nav className="orbit-rays" aria-label="Пять направлений управления">
-        {directions.map((decision, index) => <a className={`orbit-ray ray-${index + 1}`} href={`#direction-${decision.id}`} key={decision.id}>{decision.label}</a>)}
-      </nav>
-    </div>
-  )
-}
-
+function restoredPage() { try { return localStorage.getItem('astana.entered') === 'true' ? 'command' : 'landing' } catch { return 'landing' } }
 export default function App() {
-  const [catalog, setCatalog] = useState<CatalogRead | null>(null)
-  const [scenario, setScenario] = useState<ScenarioRead | null>(null)
-  const [history, setHistory] = useState<ScenarioRead[]>([])
-  const [result, setResult] = useState<CalculationRead | null>(null)
-  const [explanation, setExplanation] = useState<ExplanationRead | null>(null)
-  const [targets, setTargets] = useState<Record<string, string>>({})
-  const [teamName, setTeamName] = useState('Команда Астаны')
-  const [busy, setBusy] = useState(true)
-  const [error, setError] = useState('')
-  const inflight = useRef(false)
-
-  async function loadScenario(id: string, signal?: AbortSignal) {
-    const current = await api<ScenarioRead>(`/scenarios/${id}`, 'GET', undefined, signal)
-    const data = await api<CatalogRead>(`/catalog?dataset_id=${current.dataset_id}`, 'GET', undefined, signal)
-    let calculation: CalculationRead | null = null
-    let ai: ExplanationRead | null = null
-    if (current.status !== 'draft') {
-      calculation = await api<CalculationRead>(`/scenarios/${id}/result`, 'GET', undefined, signal)
-      ai = await api<ExplanationRead>(`/scenarios/${id}/explanation`, 'GET', undefined, signal)
-    } else if (current.decisions.length === 5) {
-      calculation = await api<CalculationRead>(`/scenarios/${id}/preview`, 'POST', { expected_revision: current.revision }, signal)
-    }
-    if (signal?.aborted) return
-    setCatalog(data); setScenario(current); setResult(calculation); setExplanation(ai)
-    setTargets(Object.fromEntries(current.decisions.filter(d => d.district_id).map(d => [d.initiative_id, d.district_id!])) )
-    storage.set('stikerai.scenario', current.id)
+  const civic = useCivic(); const sim = useSimulator()
+  const [page, setPage] = useState(restoredPage); const [mode, setMode] = useState<'government' | 'citizen'>('government'); const [district, setDistrict] = useState<DistrictCode>('nura')
+  const [listen, setListen] = useState(false); const [palette, setPalette] = useState(false); const [search, setSearch] = useState(''); const [toast, setToast] = useState(''); const [simulating, setSimulating] = useState(false)
+  const [clock, setClock] = useState(5 * 3600); const [thresholds, setThresholds] = useState(civic.state.thresholds.map(String)); const [reset, setReset] = useState(false)
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const titleRef = useRef<HTMLDivElement>(null)
+  useEffect(() => { const handler = (e: KeyboardEvent) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setPalette(v => !v); setSearch('') } }; window.addEventListener('keydown', handler); return () => { window.removeEventListener('keydown', handler); clearTimeout(toastTimer.current) } }, [])
+  useEffect(() => { if (page === 'landing') return; const timer = setInterval(() => setClock(n => Math.max(0, n - 1)), 1000); return () => clearInterval(timer) }, [page === 'landing'])
+  const notify = (text: string) => { setToast(text); clearTimeout(toastTimer.current); toastTimer.current = setTimeout(() => setToast(''), 5000) }
+  const navigate = (next: string) => { setPage(next); setPalette(false); setListen(false); window.scrollTo({ top: 0, behavior: 'instant' }); requestAnimationFrame(() => titleRef.current?.focus()) }
+  const enter = (citizen = false) => { try { localStorage.setItem('astana.entered', 'true') } catch { /* optional persistence */ }; setMode(citizen ? 'citizen' : 'government'); navigate(citizen ? 'home' : 'command'); if (!citizen && !sim.scenario && sim.catalog && !sim.busy) void sim.execute(() => sim.create()) }
+  const consider = (code: string, target: DistrictCode) => { const item = sim.catalog?.initiatives.find(i => i.code === code); const d = sim.catalog?.districts.find(d => d.code === target); setDistrict(target); setMode('government'); if (item && d && item.scope === 'district') sim.setTargets(s => ({ ...s, [item.id]: d.id })); navigate('decisions'); requestAnimationFrame(() => { if (item) document.getElementById(`direction-${item.direction}`)?.scrollIntoView({ behavior: 'smooth' }) }); notify('District preselected. Review the initiative before adding it to your scenario.') }
+  async function runSimulation() {
+    if (sim.busy || !sim.scenario || sim.scenario.decisions.length !== 5 || sim.scenario.status !== 'draft') return
+    setPalette(false); setSimulating(true)
+    await sim.execute(async () => { await sim.analyze(buildCivicContext(civic, sim)); navigate('results') })
+    setSimulating(false)
   }
-
-  useEffect(() => {
-    const controller = new AbortController()
-    async function boot() {
-      await initializeSession()
-      const rows = await api<ScenarioRead[]>('/scenarios', 'GET', undefined, controller.signal)
-      if (controller.signal.aborted) return
-      setHistory(rows)
-      const current = rows.find(row => row.id === storage.get('stikerai.scenario')) ?? rows[0]
-      if (current) await loadScenario(current.id, controller.signal)
-      else {
-        const data = await api<CatalogRead>('/catalog', 'GET', undefined, controller.signal)
-        if (!controller.signal.aborted) setCatalog(data)
-      }
-    }
-    void boot().catch(e => { if (!controller.signal.aborted) setError(e.message) })
-      .finally(() => { if (!controller.signal.aborted) setBusy(false) })
-    return () => controller.abort()
-  }, [])
-
-  useEffect(() => {
-    if (!scenario || explanation?.status !== 'running') return
-    const controller = new AbortController()
-    const id = scenario.id
-    let timer: ReturnType<typeof setTimeout>
-    async function poll() {
-      try {
-        const next = await api<ExplanationRead>(`/scenarios/${id}/explanation`, 'GET', undefined, controller.signal)
-        if (!controller.signal.aborted) setExplanation(next)
-        if (next.status === 'running' && !controller.signal.aborted) timer = setTimeout(poll, 2000)
-      } catch (e) {
-        if (!controller.signal.aborted) {
-          setError((e as Error).message)
-          timer = setTimeout(poll, 5000)
-        }
-      }
-    }
-    timer = setTimeout(poll, 1200)
-    return () => { clearTimeout(timer); controller.abort() }
-  }, [scenario?.id, explanation?.status])
-
-  async function execute(action: () => Promise<void>) {
-    if (inflight.current) return
-    inflight.current = true; setBusy(true); setError('')
-    try { await action() }
-    catch (e) {
-      setError((e as Error).message)
-      if (e instanceof ApiError && e.code === 'STALE_REVISION' && scenario) {
-        try { await loadScenario(scenario.id) } catch { /* Keep actionable original error. */ }
-      }
-    } finally { inflight.current = false; setBusy(false) }
-  }
-
-  async function create(copy = false) {
-    if (!catalog) return
-    const key = `stikerai.request.${copy ? scenario?.id : 'new'}`
-    const requestId = storage.get(key) ?? crypto.randomUUID()
-    storage.set(key, requestId)
-    const current = copy && scenario
-      ? await api<ScenarioRead>(`/scenarios/${scenario.id}/copy`, 'POST', { request_id: requestId })
-      : await api<ScenarioRead>('/scenarios', 'POST', { dataset_id: catalog.dataset.id, team_name: teamName, request_id: requestId })
-    await loadScenario(current.id)
-    storage.remove(key)
-    setHistory(await api<ScenarioRead[]>('/scenarios'))
-  }
-
-  async function save(choices: DecisionSelect[]) {
-    if (!scenario) return
-    const current = await api<ScenarioRead>(`/scenarios/${scenario.id}/decisions`, 'PUT', {
-      expected_revision: scenario.revision, decisions: choices,
-    })
-    setScenario(current); setResult(null); setExplanation(null)
-    if (current.decisions.length === 5) {
-      const next = await api<CalculationRead>(`/scenarios/${current.id}/preview`, 'POST', { expected_revision: current.revision })
-      setResult(next)
-    }
-  }
-
-  async function toggle(initiativeId: string) {
-    if (!scenario) return
-    const exists = scenario.decisions.some(d => d.initiative_id === initiativeId)
-    const choices = scenario.decisions.filter(d => d.initiative_id !== initiativeId)
-      .map(d => ({ initiative_id: d.initiative_id, district_id: d.district_id }))
-    if (!exists) choices.push({ initiative_id: initiativeId, district_id: targets[initiativeId] || null })
-    await save(choices)
-  }
-
-  async function analyze() {
-    if (!scenario) return
-    const calculation = await api<CalculationRead>(`/scenarios/${scenario.id}/submit`, 'POST', { expected_revision: scenario.revision })
-    setResult(calculation)
-    setScenario({ ...scenario, status: 'evaluated', revision: scenario.revision + 1 })
-    setScenario(await api<ScenarioRead>(`/scenarios/${scenario.id}`))
-    setExplanation(await api<ExplanationRead>(`/scenarios/${scenario.id}/explanation`, 'POST'))
-  }
-
-  const count = scenario?.decisions.length ?? 0
-  const frozen = !!scenario && scenario.status !== 'draft'
-  const shown = result ?? catalog?.baseline
-  const spent = scenario?.spent_budget ?? 0
-  const budget = catalog?.dataset.initial_budget ?? 100
-  const weakest = shown?.districts.reduce((lowest, d) => d.final_score < lowest.final_score ? d : lowest)
-
-  return (
-    <div className="app-shell">
-      <aside className="nav-rail">
-        <div className="brand"><span className="brand-mark">S</span><span>STIKER<span className="brand-accent">AI</span></span></div>
-        <AstanaIdentity />
-        <div className="nav-group"><span className="nav-caption">ГОРОД</span><a className="nav-link active" href="#decisions"><span>⌂</span> Обзор</a><a className="nav-link" href="#districts"><span>◉</span> Районы</a><a className="nav-link" href="#decisions"><span>↗</span> Сценарии</a></div>
-        <div className="nav-group"><span className="nav-caption">РАБОЧАЯ СЕССИЯ</span><div className={`session-step ${!result ? 'current' : ''}`}><b>01</b><span>Портфель решений</span></div><div className={`session-step ${result && !frozen ? 'current' : ''}`}><b>02</b><span>Анализ влияния</span></div><div className={`session-step ${frozen ? 'current' : ''}`}><b>03</b><span>Итоговый отчёт</span></div></div>
-        <div className="nav-footer"><span className="status-pulse" /> {error ? 'Ошибка синхронизации' : busy ? 'Синхронизация…' : 'Сервер подключён'}<br /><small>{scenario ? 'Сценарий сохранён на сервере' : 'Начните новый сценарий'}</small></div>
-      </aside>
-      <div className="workspace">
-      <header className="topbar"><div className="brand"><span className="brand-mark">S</span><span>STIKER<span className="brand-accent">AI</span></span></div><div className="topbar-meta">ГОРОДСКАЯ ЛАБОРАТОРИЯ · АСТАНА</div></header>
-      <main className="dashboard" aria-busy={busy}>
-        <section className="intro-row"><div><p className="eyebrow">Астана · Пять направлений. Один город.</p><h1>Аким<br /><em>на 5 часов.</em></h1><p className="intro-copy">Выберите пять инициатив, не более двух из одного направления. {catalog && `Бюджет — ${catalog.dataset.initial_budget} условных единиц. Горизонт расчёта — ${catalog.dataset.horizon_quarters} кварталов.`}</p></div><div className="hero-visual"><BaiterekOrbit score={shown?.final_score ?? null} /><div className="session-card"><span className="card-label">ПОРТФЕЛЬ СЦЕНАРИЯ</span><strong>{String(count).padStart(2, '0')} <small>/ 05</small></strong><span>{frozen ? 'Сценарий завершён' : 'мероприятий выбрано'}</span><div className="mini-progress"><i style={{ width: `${count * 20}%` }} /></div></div></div></section>
-        {error && <div className="error-banner" role="alert">{error}<button onClick={() => window.location.reload()}>Обновить данные</button></div>}
-        {busy && <p role="status" className="loading-message">Синхронизация с сервером…</p>}
-        {!catalog && !busy && <p>Данные пока недоступны. Проверьте запуск API и загрузку датасета.</p>}
-        {catalog && <>
-          <section className="session-toolbar" aria-label="Управление сценариями">
-            {!scenario ? <><label>Название команды<input value={teamName} maxLength={120} onChange={e => setTeamName(e.target.value)} /></label><button className="secondary-action" disabled={busy || !teamName.trim()} onClick={() => void execute(() => create())}>Начать сценарий</button></> : <>
-              <label>Мои сценарии<select disabled={busy} value={scenario.id} onChange={e => void execute(() => loadScenario(e.target.value))}>{history.map(row => <option key={row.id} value={row.id}>{row.team_name} · {row.id.slice(0, 6)}</option>)}</select></label>
-              <span className="save-state">{frozen ? 'Результат сохранён' : 'Черновик сохранён'} · {scenario.team_name}</span>
-              <button className="secondary-action" disabled={busy} onClick={() => void execute(() => create(frozen))}>{frozen ? 'Создать копию и изменить' : 'Новый сценарий'}</button>
-            </>}
-          </section>
-          <section className="metrics-grid" aria-label="Ключевые показатели">
-            <article className="metric-card budget-card"><div className="metric-heading"><span className="card-label">ОБЩИЙ БЮДЖЕТ</span><span className="metric-icon">◈</span></div><strong data-testid="budget">{budget} <small>усл. ед.</small></strong><div className="budget-line"><span>Использовано {spent}</span><span>{budget - spent} осталось</span></div><div className="budget-progress"><i style={{ width: `${spent / budget * 100}%` }} /></div></article>
-            <article className="metric-card score-card"><span className="card-label">ASTANA QUALITY OF LIFE</span><div className="score-value"><strong data-testid="score">{shown ? fmt(shown.final_score) : '—'}</strong></div><div className="score-foot">{result ? `${frozen ? 'Итог' : 'Предварительный расчёт'} · ${delta(result.final_score - result.baseline_score)} к базе` : 'Исходное состояние города'}</div></article>
-            <article className="metric-card signal-card"><span className="card-label">СЛАБЕЙШИЙ РАЙОН</span><strong>{weakest?.name ?? '—'}</strong><p>Критических показателей: {shown?.critical_count ?? '—'}. Порог — строго ниже 40.</p></article>
-          </section>
-          <div className="content-grid" id="decisions">
-            <section className="decisions-panel"><div className="section-heading"><div><span className="section-kicker">14 ИНИЦИАТИВ · 5 РЕШЕНИЙ</span><h2>Портфель решений</h2></div><span className="lock-note">БЮДЖЕТНЫЙ КОНТРОЛЬ</span></div>
-              {directions.map((direction, index) => <section className="decision-row" id={`direction-${direction.id}`} key={direction.id}><div className="decision-title"><span className="decision-number">0{index + 1}</span><span className="decision-icon">{direction.icon}</span><div><h3>{direction.label}</h3><p>Можно выбрать до двух</p></div></div><div className="option-list">
-                {catalog.initiatives.filter(item => item.direction === direction.id).sort((a, b) => Number(a.code.slice(1)) - Number(b.code.slice(1))).map(item => {
-                  const selected = scenario?.decisions.find(d => d.initiative_id === item.id)
-                  return <div className={`initiative-card ${selected ? 'selected' : ''}`} key={item.id}>
-                    <button data-testid={`initiative-${item.code}`} className={`option ${selected ? 'selected' : ''}`} aria-pressed={!!selected} disabled={busy || !scenario || frozen} onClick={() => void execute(() => toggle(item.id))}><span className="radio" /><span className="option-copy"><strong>{item.code} · {item.title}</strong><small>{item.scope === 'city' ? 'Весь город' : 'Один район'} · лаг {item.lag_quarters} кв.</small></span><span className="option-cost">{item.cost} усл. ед.</span></button>
-                    {item.scope === 'district' && <label className="district-target">Район<select data-testid={`district-${item.code}`} aria-label={`Район для ${item.code}`} disabled={busy || !scenario || frozen} value={selected?.district_id ?? targets[item.id] ?? ''} onChange={e => {
-                      const districtId = e.target.value
-                      if (selected && scenario) void execute(async () => {
-                        await save(scenario.decisions.map(d => ({ initiative_id: d.initiative_id, district_id: d.initiative_id === item.id ? districtId || null : d.district_id })))
-                        setTargets(current => ({ ...current, [item.id]: districtId }))
-                      })
-                      else setTargets(current => ({ ...current, [item.id]: districtId }))
-                    }}><option value="">Выберите район</option>{catalog.districts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}</select></label>}
-                    <details className="effect-details"><summary>Полный эффект</summary>{(Object.keys(metrics) as Metric[]).filter(m => item[m] !== 0).map(m => <p key={m}>{metrics[m]}: {delta(item[m])}</p>)}<p>Реализуется {(catalog.dataset.horizon_quarters - item.lag_quarters) / catalog.dataset.horizon_quarters * 100}% эффекта.</p></details>
-                  </div>
-                })}
-              </div></section>)}
-              <div className="decision-footer"><span>Выбрано: <b>{count}</b> из 5</span><span>Расход: <b>{spent} усл. ед.</b></span></div>
-            </section>
-            <aside className="side-panel" id="districts"><div className="section-heading compact"><h2>Пульс районов</h2></div><div className="district-list">{shown?.districts.map(d => <div className="district" key={d.district_id}><div className="district-avatar mint">{d.name[0]}</div><div className="district-info"><strong>{d.name}</strong><span>Взвешенный индекс</span></div><div className="district-score"><strong>{fmt(d.final_score)}</strong><span>{delta(d.final_score - d.baseline_score)}</span></div></div>)}</div>
-              {!frozen && <><button className="primary-action" disabled={busy || !scenario || count !== 5} onClick={() => void execute(analyze)}>Показать анализ сценария <span>→</span></button><p className="action-note">Сохранит итог и зафиксирует пять решений.</p></>}
-              {frozen && <div className="ai-note"><div className="ai-badge">✦ AI</div><div><strong>Объяснение результата</strong>
-                {explanation?.status === 'running' ? <p role="status">AI анализирует рассчитанные показатели…</p> : explanation?.payload ? <><p>{explanation.payload.summary}</p>{(['strengths', 'risks', 'consequences', 'recommendations'] as const).map((key, i) => <section key={key}><h4>{['Сильные стороны', 'Риски', 'Последствия', 'Рекомендации'][i]}</h4><ul>{explanation.payload![key].map((text, j) => <li key={j}>{text}</li>)}</ul></section>)}</> : <><p>{explanation?.error ?? 'Численный результат сохранён. Можно запросить AI-объяснение.'}</p><button className="secondary-action" disabled={busy} onClick={() => void execute(async () => setExplanation(await api<ExplanationRead>(`/scenarios/${scenario!.id}/explanation`, 'POST')))}>Повторить AI-анализ</button></>}
-              </div></div>}
-            </aside>
-          </div>
-          {shown && <section className="results-panel"><div className="section-heading"><h2>Показатели районов {frozen ? 'после решений' : result ? '· предварительный расчёт' : '· исходные данные'}</h2></div><p>Все показатели от 0 до 100; выше — лучше. Изменение указано в пунктах.</p><div className="table-scroll"><table><thead><tr><th>Показатель</th>{shown.districts.map(d => <th key={d.district_id}>{d.name}</th>)}</tr></thead><tbody>{(Object.keys(metrics) as Metric[]).map(m => <tr key={m}><th>{metrics[m]}</th>{shown.districts.map(d => <td className={d.after[m] < 40 ? 'critical' : ''} key={d.district_id}>{fmt(d.after[m])}<small>{delta(d.after[m] - d.before[m])}</small></td>)}</tr>)}</tbody></table></div>
-            {!!result?.contributions.length && <details className="contributions"><summary>Эффекты мероприятий и синергий</summary><p>Добавки после учёта лагов, до ограничения показателей диапазоном 0–100.</p>{result.contributions.map((entry, index) => <p key={index}><strong>{entry.label}</strong> · {catalog.districts.find(d => d.id === entry.district_id)?.name}: {Object.entries(entry.effects).map(([key, value]) => `${key.toUpperCase()} ${delta(value!)}`).join(', ')}</p>)}</details>}
-          </section>}
-        </>}
-      </main><footer className="footer"><span>STIKERAI · ГОРОДСКАЯ ЛАБОРАТОРИЯ</span><span>Данные синтетические · Учебная симуляция</span></footer></div>
-    </div>
-  )
+  const shared = { civic, sim, district, navigate, notify, consider }
+  const shown = sim.result ?? sim.catalog?.baseline
+  const summary = civicSummary(civic, sim.catalog, sim.scenario)
+  const clockText = [Math.floor(clock / 3600), Math.floor(clock % 3600 / 60), clock % 60].map(n => String(n).padStart(2, '0')).join(':')
+  const commands = [
+    { label: 'Go to Nura', detail: 'District intelligence', action: () => { setDistrict('nura'); navigate('districts') } },
+    { label: 'View critical indicators', detail: 'Command center', action: () => navigate('command') },
+    { label: 'Open petitions', detail: 'Citizen participation', action: () => navigate('petitions') },
+    { label: 'Find initiative', detail: 'Government decisions', action: () => navigate('decisions') },
+    { label: 'Run simulation', detail: 'Requires five valid decisions', action: () => void runSimulation(), disabled: sim.busy || sim.scenario?.decisions.length !== 5 || sim.scenario.status !== 'draft' },
+    { label: 'View City Pulse', detail: 'Listen to your residents', action: () => navigate('pulse') },
+    { label: 'Open community funding', detail: 'Simulated support', action: () => navigate('funding') },
+    ...Object.entries(initiativeNames).filter(() => search.trim().length > 1).map(([code, name]) => ({ label: name, detail: `Government initiative · ${code}`, action: () => consider(code, district) })),
+  ].filter(c => (c.label + ' ' + c.detail).toLowerCase().includes(search.toLowerCase()))
+  if (page === 'landing') return <div className="landing"><header><button className="wordmark" onClick={() => navigate('landing')}>ASTANA <span>//</span></button><Badge><span className="live-dot" />URBAN OPERATING SYSTEM</Badge><span className="landing-edition">THE CITY, REIMAGINED.</span></header><main><div className="landing-copy"><p className="eyebrow">AKIM MODE / ASTANA PULSE</p><h1>Run the city.<br />Hear the city.<br /><span>See the consequences.</span></h1><p className="landing-description">A digital twin for urban decision-making.<br />City data, AI-assisted insight, and the people who make it a city.</p><div className="landing-actions"><button className="btn primary" aria-label="Начать сценарий — Enter Command Center" disabled={sim.busy || !sim.catalog} onClick={() => enter()}>Enter Command Center <ArrowRight size={18} /></button><button className="btn secondary" onClick={() => enter(true)}>Enter as citizen <Users size={17} /></button></div>{sim.error && <div className="notice error-text" role="alert">{sim.error}<button className="text-link" onClick={() => window.location.reload()}>Retry connection</button></div>}<div className="landing-stats">{[['5', 'districts'], ['10', 'indicators'], ['5', 'decisions'], ['100', 'budget units'], ['1', 'city']].map(([n, title]) => <div key={title}><strong>{n}</strong><span>{title}</span></div>)}</div></div><div className="landing-visual"><div className="landing-orbits"><div /><div /><div /></div><Orb /><span className="orbit-caption top">51.1694° N · 71.4491° E</span><div className="floating-label label-one"><span className="live-dot" />CITY STATE <b>CONNECTED</b></div><div className="floating-label label-two"><Users size={16} /><div><b>A city that listens.</b><span>Government + citizens</span></div></div><div className="floating-label label-three"><span className="gold-dot" /><b>05:00:00</b><span>Your term begins here.</span></div><div className="landing-map-lines" /></div></main><footer><span>FROM MANAGING A CITY TO ACTING TOGETHER.</span><span>Local prototype · Fictional civic data · No real payments</span></footer></div>
+  return <div className="os-shell"><aside className="sidebar"><button className="wordmark" onClick={() => navigate('landing')}>ASTANA <span>//</span></button><button className="mode-switch" onClick={() => { const next = mode === 'government' ? 'citizen' : 'government'; setMode(next); navigate(next === 'citizen' ? 'home' : 'command') }}><span className="mode-icon">{mode === 'government' ? <Building2 size={18} /> : <Users size={18} />}</span><span><strong>{mode === 'government' ? 'Akim workspace' : 'Citizen workspace'}</strong><small>Switch perspective</small></span><ChevronDown size={14} /></button><div className="nav-label">{mode === 'government' ? 'CITY OPERATIONS' : 'YOUR CITY, YOUR VOICE'}</div><nav aria-label="Main navigation">{mode === 'citizen' && <button className={page === 'home' ? 'active' : ''} onClick={() => navigate('home')}><Users size={17} />Citizen home</button>}{menu.map(({ id, label, icon: Icon }, i) => <button key={id} className={`${page === id ? 'active' : ''} ${i === 3 ? 'nav-divider' : ''}`} onClick={() => navigate(id)}><Icon size={17} strokeWidth={1.6} /><span>{label}</span>{id === 'pulse' && <i className="nav-signal" />}</button>)}</nav><div className="sidebar-bottom"><button onClick={() => navigate('open')}><Globe2 size={16} />Astana Open<ArrowUpRight size={13} /></button><button onClick={() => navigate('settings')}><Settings2 size={16} />Simulation settings</button><div className="sidebar-resident"><span>AN</span><div><strong>{mode === 'government' ? 'Your five-hour term' : 'Demo resident'}</strong><small>Astana · {districtNames[district]}</small></div><span className="online-indicator" /></div></div></aside><div className="os-workspace"><header className="global-header"><div className="header-brand"><strong>{mode === 'government' ? 'AKIM MODE' : 'ASTANA PULSE'}</strong><span>Astana Urban Operating System</span></div><div className="simulation-clock" title="Narrative demo timer. No expiry penalty."><span className="live-dot" /><strong>{clockText}</strong><small>SIMULATION CLOCK</small></div><div className="header-metrics"><div><small>Budget used</small><strong>{sim.scenario?.spent_budget ?? 0}<span> / 100</span></strong></div><div><small>Decisions</small><strong>{sim.scenario?.decisions.length ?? 0}<span> / 5</span></strong></div><div><small>Citizen Pulse</small><strong className="positive">{Math.round(Object.values(citizens).reduce((s, c) => s + c.pulse, 0) / 5)}<span>%</span></strong></div></div><button className="command-trigger" onClick={() => { setPalette(true); setSearch('') }} aria-label="Open command palette"><Search size={17} /><kbd>⌘ K</kbd></button><button className="mobile-menu" onClick={() => setPalette(true)} aria-label="Open navigation"><Command size={20} /></button></header><main className="os-main" ref={titleRef} tabIndex={-1}>{sim.error && <div className="error-banner" role="alert"><span>{sim.error}</span><button onClick={() => window.location.reload()}>Refresh data</button></div>}{sim.busy && <div role="status" className="sync-message">Synchronizing your city…</div>}{civic.storageError && <div className="notice" role="status">Browser storage is full or unavailable. Your civic actions work for this session but may not survive a reload.</div>}
+    {page === 'command' && <><CommandCenter sim={sim} civic={civic} district={district} setDistrict={setDistrict} navigate={navigate} listen={() => setListen(true)} />{sim.scenario?.status !== 'draft' && sim.result && <Results sim={sim} civic={civic} />}<GovernmentWorkbench sim={sim} civic={civic} onRun={() => void runSimulation()} /></>}
+    {page === 'decisions' && <GovernmentWorkbench sim={sim} civic={civic} onRun={() => void runSimulation()} showScore />}
+    {page === 'districts' && <><PageHeading eyebrow="DISTRICT INTELLIGENCE" title="Five neighborhoods. One connected city." description="Explore local needs alongside the people asking for change." action={<button className="btn secondary" onClick={() => setListen(true)}><Ear size={16} />Listen to the city</button>} />{sim.catalog && shown ? <div className="district-page"><CityMap catalog={sim.catalog} shown={shown} civic={civic} district={district} onDistrict={setDistrict} /><DistrictCard code={district} catalog={sim.catalog} shown={shown} civic={civic} onPulse={() => navigate('pulse')} /></div> : <Empty title="Waiting for district data." />}</>}
+    {page === 'home' && <CitizenHome {...shared} />}{page === 'pulse' && <PulsePage {...shared} />}{page === 'votes' && <VotesPage {...shared} />}{page === 'petitions' && <PetitionsPage {...shared} />}{page === 'funding' && <FundingPage {...shared} />}{page === 'initiatives' && <InitiativesPage {...shared} />}
+    {page === 'advisor' && <><PageHeading eyebrow="AI ADVISOR" title="Intelligence with a human context." description="Official simulation results and fictional citizen signals, explained separately." /><Advisor sim={sim} civic={civic} /></>}
+    {page === 'results' && <><Results sim={sim} civic={civic} /><GovernmentWorkbench sim={sim} civic={civic} onRun={() => void runSimulation()} showScore /></>}
+    {page === 'open' && <><PageHeading eyebrow="ASTANA OPEN / PUBLIC TRANSPARENCY" title="Your city. In the open." description="See what is planned, what residents support, and how the simulated city changes." /><div className="open-summary card"><div><p className="eyebrow">CURRENT QUALITY OF LIFE</p><strong>{shown ? fmt(shown.final_score, 2) : '—'}</strong><small>{sim.result ? 'Calculated scenario' : 'Baseline'}</small></div><div><p className="eyebrow">GOVERNMENT BUDGET USED</p><strong>{sim.scenario?.spent_budget ?? 0} / 100</strong><small>Virtual units, not tenge</small></div><div><p className="eyebrow">CITIZEN ALIGNMENT</p><strong>{summary.alignment === null ? '—' : `${fmt(summary.alignment, 1)}%`}</strong><small>Advisory, separate from QoL</small></div></div><section className="card"><h2>Government plan</h2>{summary.selected.length ? summary.selected.map(({ item, decision }) => <div className="line-item" key={item!.id}><div><strong>{initiativeNames[item!.code]}</strong><p className="small muted">{item!.scope === 'city' ? 'Citywide' : districtNames[sim.catalog!.districts.find(d => d.id === decision.district_id)!.code as DistrictCode]} · {item!.cost} units · {item!.lag_quarters} quarter lag</p></div><Badge>{sim.scenario?.status === 'draft' ? 'Draft plan' : 'Simulated · not implemented'}</Badge></div>) : <Empty title="No government decisions selected yet." />}</section><div className="open-links"><button className="card" onClick={() => navigate('petitions')}><MessageSquare size={24} /><h3>{civic.petitions.length} community petitions</h3><ArrowUpRight size={18} /></button><button className="card" onClick={() => navigate('funding')}><HeartHandshake size={24} /><h3>{civic.projects.length} funded community projects</h3><ArrowUpRight size={18} /></button></div>{sim.catalog && shown && <DistrictCard code={district} catalog={sim.catalog} shown={shown} civic={civic} onPulse={() => navigate('pulse')} />}</>}
+    {page === 'settings' && <><PageHeading eyebrow="SIMULATION SETTINGS" title="Clear rules. Credible outcomes." description="The official city model stays independent from civic participation." /><div className="settings-grid"><section className="card"><h2>The city model</h2>{[['Budget', '100 virtual units'], ['Decisions', 'Exactly 5; at most 2 per direction'], ['Horizon', '8 quarters / 2 years'], ['Score', '70% weighted average + 30% weakest district − critical indicators'], ['Citizen alignment', 'Mean support percentage of selected initiatives'], ['Community resources', 'Sum of related projects, each counted once'], ['Data', 'Synthetic city dataset + fictional civic demo']].map(([k, v]) => <div className="line-item" key={k}><strong>{k}</strong><span>{v}</span></div>)}</section><section className="card"><h2>Petition milestones</h2><p className="notice">Demo simulation thresholds only. These do not represent legal Astana requirements or trigger real reviews.</p><form onSubmit={e => { e.preventDefault(); const values = thresholds.map(Number); if (values.some((n, i) => !Number.isSafeInteger(n) || n <= 0 || i > 0 && n <= values[i - 1])) { notify('Thresholds must be positive and strictly increasing.'); return }; civic.dispatch({ type: 'thresholds', values }); notify('Demo petition milestones updated.') }}>{thresholds.map((n, i) => <label key={i}>{['Local district signal', 'Priority review', 'Administration review'][i]}<input type="number" required min={1} max={1000000} value={n} onChange={e => setThresholds(s => s.map((v, index) => index === i ? e.target.value : v))} /></label>)}<button className="btn primary">Save demo milestones</button></form><hr /><h3>Reset civic demo</h3><p className="small muted">Clears your local votes, reports and simulated contributions. Government scenarios remain on the server.</p><button className="btn secondary" onClick={() => setReset(true)}><RotateCcw size={15} />Reset citizen activity</button></section></div></>}
+    </main><LiveActivityTicker civic={civic} /><footer className="os-footer"><span>ASTANA // CITY + PEOPLE + POSSIBILITY</span><span>Synthetic simulation · Fictional civic data · No real payments</span></footer></div>
+    {listen && <Dialog title="Listen to the city" className="listen-drawer" onClose={() => setListen(false)}><div className="detail-content"><p className="eyebrow">SOCIAL INTELLIGENCE / DEMO</p><h2>The next decision<br />starts with listening.</h2><div className="listen-highlight"><span>TOP REQUEST TODAY</span><h3>{citizens.nura.concern}</h3><b>{fmt(citizens.nura.signals)} resident signals</b></div><div className="listen-highlight"><span>FASTEST GROWING CONCERN</span><h3>Air quality in Saryarka</h3><b>+{citizens.saryarka.growth}% in the mock weekly feed</b></div><div className="listen-highlight"><span>MOST SUPPORTED PROJECT</span><h3>{[...civic.projects].sort((a, b) => b.supporters - a.supporters)[0].title}</h3><b>{fmt(Math.max(...civic.projects.map(p => p.supporters)))} supporters</b></div><div className="listen-highlight"><span>MOST SIGNED PETITION</span><h3>{[...civic.petitions].sort((a, b) => b.signatures - a.signatures)[0].title}</h3><b>{fmt(Math.max(...civic.petitions.map(p => p.signatures)))} signatures</b></div><h3>Your recent civic activity</h3>{civic.state.events.length ? civic.state.events.slice(0, 5).map(e => <p className="activity-item" key={e.id}>{e.text}</p>) : <p className="muted">Sign, vote or support a project in Citizen Mode to see the signal here.</p>}<button className="btn primary full" onClick={() => navigate('pulse')}>Open City Pulse<ArrowRight size={16} /></button></div></Dialog>}
+    {palette && <Dialog title="ASTANA COMMAND" className="command-dialog" onClose={() => setPalette(false)}><div className="palette-search"><Search size={20} /><input autoFocus placeholder="Where would you like to go?" aria-label="Search commands" value={search} onChange={e => setSearch(e.target.value)} /></div><div className="command-results">{commands.map(c => <button key={c.label} disabled={'disabled' in c && c.disabled} onClick={c.action}><Command size={16} /><div><strong>{c.label}</strong><small>{c.detail}</small></div><ArrowUpRight size={16} /></button>)}{!commands.length && <Empty title="No matching commands." />}{!search && menu.map(m => <button key={m.id} onClick={() => navigate(m.id)}><m.icon size={16} /><strong>{m.label}</strong><ArrowUpRight size={15} /></button>)}</div><div className="palette-footer">Tab to navigate · Enter to select · Esc to close</div></Dialog>}
+    {simulating && <Dialog title="Simulating your city" onClose={() => {}} className="simulation-dialog"><Orb /><h2>Simulating 8 quarters<br />of city development…</h2><p>Applying validated decisions to the deterministic city model.</p></Dialog>}
+    {reset && <Dialog title="Reset citizen activity?" onClose={() => setReset(false)}><div className="detail-content"><p>This clears local demo reports, signatures, votes, ideas, comments and simulated contributions.</p><button className="btn primary" onClick={() => { civic.dispatch({ type: 'reset' }); setThresholds(['500', '1500', '3000']); setReset(false); notify('Citizen demo reset.') }}>Reset local civic data</button></div></Dialog>}
+    {toast && <div className="toast" role="status"><CheckToast /><span>{toast}</span><button className="icon-btn" aria-label="Dismiss notification" onClick={() => setToast('')}><X size={15} /></button></div>}
+  </div>
 }
+function CheckToast() { return <span className="toast-dot">✓</span> }

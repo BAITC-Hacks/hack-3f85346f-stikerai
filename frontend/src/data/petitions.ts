@@ -1,0 +1,10 @@
+import type { DistrictCode } from './citizens'
+import type { Direction, Metric } from '../types/domain'
+export type Petition = { id: string; title: string; district: DistrictCode; category: Direction; author: string; signatures: number; goal: number; status: 'Collecting signatures' | 'Under review' | 'Accepted for consideration' | 'Response published' | 'Implemented'; problem: string; solution: string; related: string[]; metrics: Metric[] }
+export const demoThresholds = [500, 1500, 3000]
+export const petitions: Petition[] = [
+  { id: 'petition-bus', title: 'More frequent public transport in Nura', district: 'nura', category: 'transport', author: 'Nura Neighborhood Council', signatures: 2486, goal: 3000, status: 'Collecting signatures', problem: 'Long waits make daily journeys to schools and clinics difficult.', solution: 'Increase bus frequency and prioritize dedicated lanes.', related: ['M1', 'M3'], metrics: ['t1', 't2'] },
+  { id: 'petition-school', title: 'Give every child a school close to home', district: 'nura', category: 'social', author: 'Parents of Nura', signatures: 2640, goal: 3000, status: 'Under review', problem: 'Schools are overcrowded as the neighborhood grows.', solution: 'Build a modular school and kindergarten near new housing.', related: ['M7'], metrics: ['s1'] },
+  { id: 'petition-air', title: 'Cleaner heating. A healthier winter.', district: 'saryarka', category: 'ecology', author: 'Clean Air Community', signatures: 1820, goal: 3000, status: 'Collecting signatures', problem: 'Winter smoke affects air quality near private homes.', solution: 'Support a transition to clean fuel and green buffers.', related: ['M5', 'M6'], metrics: ['e2'] },
+  { id: 'petition-crossing', title: 'Safe crossings around Almaty schools', district: 'almaty', category: 'safety', author: 'Safe Streets Collective', signatures: 736, goal: 1500, status: 'Accepted for consideration', problem: 'Busy roads separate children from their schools.', solution: 'Create visible school zones with protected crossings.', related: ['M11'], metrics: ['b2'] },
+]
