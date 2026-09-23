@@ -80,6 +80,7 @@ services:
     environment:
       API_PROXY_TARGET: http://backend:8000
       WATCH_USE_POLLING: "true"
+      VITE_MAP_STYLE_URL: ${VITE_MAP_STYLE_URL:-https://tiles.openfreemap.org/styles/positron}
     volumes:
       - ./frontend/src:/app/src
       - ./frontend/index.html:/app/index.html

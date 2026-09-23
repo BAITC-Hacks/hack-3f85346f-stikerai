@@ -221,6 +221,39 @@ export type InitiativeRuleRead = {
 
 export type InitiativeScope = "district" | "city"
 
+export type MapDistrictCollection = {
+  type: string
+  features: Array<MapDistrictFeature>
+  dataset_id: string
+  boundary_version: string
+  source_snapshot_at: string
+  retrieved_at: string
+  attribution: string
+  license_url: string
+}
+
+export type MapDistrictFeature = {
+  type: string
+  id: string
+  geometry: MapGeometry
+  properties: MapDistrictProperties
+}
+
+export type MapDistrictProperties = {
+  code: string
+  name: string
+  source_url: string
+  district_id: string | null
+  candidate_district_id: string | null
+  mapping_status: "verified" | "unverified" | "missing"
+  mapping_note: string
+}
+
+export type MapGeometry = {
+  type: string
+  coordinates: Array<Array<Array<Array<number>>>>
+}
+
 export type Metric = "t1" | "t2" | "e1" | "e2" | "s1" | "s2" | "b1" | "b2" | "c1" | "c2"
 
 export type PlanSave = {

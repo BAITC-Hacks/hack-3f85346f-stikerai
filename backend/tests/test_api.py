@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import httpx
 import pytest
@@ -96,6 +96,50 @@ def test_public_signals_and_disabled_gateway(client, monkeypatch):
     assert client.post('/api/mirofish/scenario', json=brief).status_code == 503
     client.cookies.clear()
     assert client.post('/api/mirofish/scenario', json={}).status_code == 401
+
+
+def test_map_snapshot_does_not_guess_geographic_correspondence(client):
+    catalog = client.get('/api/catalog').json()
+    response = client.get('/api/map/districts', params={'dataset_id': catalog['dataset']['id']})
+    assert response.status_code == 200
+    data = response.json()
+    assert data['dataset_id'] == catalog['dataset']['id']
+    assert len(data['features']) == 6
+    assert len({row['id'] for row in data['features']}) == 6
+    assert all(row['properties']['district_id'] is None for row in data['features'])
+    assert sum(row['properties']['mapping_status'] == 'unverified' for row in data['features']) == 5
+    saraishyk = next(row for row in data['features'] if row['properties']['code'] == 'saraishyk')
+    assert saraishyk['properties']['mapping_status'] == 'missing'
+    assert saraishyk['properties']['candidate_district_id'] is None
+    for feature in data['features']:
+        assert feature['geometry']['type'] == 'MultiPolygon'
+        for polygon in feature['geometry']['coordinates']:
+            for ring in polygon:
+                assert len(ring) >= 4 and ring[0] == ring[-1]
+                assert all(70.5 < lng < 72.2 and 50.5 < lat < 51.8 for lng, lat in ring)
+    assert client.get('/api/map/districts', params={'dataset_id': str(uuid4())}).status_code == 404
+    assert client.get('/api/map/districts', params={'dataset_id': '../anything'}).status_code == 422
+
+
+def test_map_crosswalk_is_versioned_and_requires_evidence(client, monkeypatch, engine):
+    from copy import deepcopy
+    from app.api import map as map_api
+    from app.models import Dataset
+    catalog = client.get('/api/catalog').json()
+    data = deepcopy(map_api.boundary_crosswalk())
+    version = map_api.boundary_snapshot()['boundary_version']
+    link = data[version][catalog['dataset']['version']]['nura']
+    link['status'] = 'verified'
+    monkeypatch.setattr(map_api, 'boundary_crosswalk', lambda: data)
+    def nura():
+        features = client.get('/api/map/districts', params={'dataset_id': catalog['dataset']['id']}).json()['features']
+        return next(row['properties'] for row in features if row['properties']['code'] == 'nura')
+    assert nura()['district_id'] is None  # a status flag alone is insufficient
+    link['evidence_url'] = 'https://example.org/test-only-boundary-review'
+    assert nura()['district_id'] == next(row['id'] for row in catalog['districts'] if row['code'] == 'nura')
+    with Session(engine) as session, session.begin():
+        session.get(Dataset, UUID(catalog['dataset']['id'])).version = 'unmapped-version'
+    assert nura()['mapping_status'] == 'missing'
 
 
 def test_catalog_save_reload_preview_submit_and_copy(client, engine):

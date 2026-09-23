@@ -11,7 +11,7 @@ profiling.
 | Layer | Initial treatment | Readiness |
 |---|---|---|
 | Proposal / project footprints | Show adopted/planned items differently from existing assets and link to source documents | Geometry and reuse rights need verification |
-| Districts / neighborhoods | Show boundary source date/vintage; never attach the five synthetic score rows to today's six district boundaries without a crosswalk | Blocked pending boundary geometry/crosswalk |
+| Districts / neighborhoods | Show boundary source date/vintage; never attach the five synthetic score rows to today's six district boundaries without a crosswalk | Six OSM polygons bundled; same-name model candidates remain unverified and polygons stay grey. See [interactive map](../interactive-map.md). |
 | Air quality | Separate Kazhydromet reference stations from AirKaz community sensors and IQAir aggregate; show pollutant, unit/AQI scale, station type, timestamp, and freshness | API rights and current Astana coverage not verified |
 | Weather / precipitation | Show provider model, issue time, valid time, resolution, ensemble/statistic, and staleness | WeatherNext access/terms need review; current Open-Meteo sample is stale and city-reference only |
 | Public discussion | Proposal-level aggregate topics/stance and language/coverage facts; no user points or inferred residential locations | Current API contains synthetic demo aggregates only |

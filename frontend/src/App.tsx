@@ -1,5 +1,8 @@
+import { t, tr, locale } from './i18n'
 import { PublicSignalsPanel } from './PublicSignalsPanel'
+import { LanguageSwitcher, useLanguage } from './i18n'
 import { CityLiveView } from './CityLiveView'
+import AstanaMap from './AstanaMap'
 import './civic-context.css'
 import { useEffect, useRef, useState } from 'react'
 import { api, ApiError } from './api'
@@ -17,8 +20,7 @@ const metrics: Record<Metric, string> = {
   s1: 'Школы и детсады', s2: 'Первичная медицина', b1: 'Безопасность улиц', b2: 'Дорожная безопасность',
   c1: 'Надёжность ЖКХ', c2: 'Обращения жителей',
 }
-const number = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
-const fmt = (value: number) => number.format(value)
+const fmt = (value: number) => new Intl.NumberFormat(locale(), { maximumFractionDigits: 2, minimumFractionDigits: 2 }).format(value)
 const delta = (value: number) => `${value >= 0 ? '+' : '−'}${fmt(Math.abs(value))}`
 const storage = {
   get(key: string) { try { return localStorage.getItem(key) } catch { return null } },
@@ -44,9 +46,9 @@ function BaiterekMark() {
 
 function AstanaIdentity() {
   return (
-    <div className="astana-identity" aria-label="Астана · Аким на 5 часов">
+    <div className="astana-identity" aria-label={t("Астана · Аким на 5 часов")}>
       <div className="astana-symbol"><BaiterekMark /></div>
-      <div><strong>Астана</strong><small>АКИМ НА 5 ЧАСОВ</small></div>
+      <div><strong>{t("Астана")}</strong><small>{t("АКИМ НА 5 ЧАСОВ")}</small></div>
     </div>
   )
 }
@@ -62,19 +64,20 @@ function BaiterekOrbit({ score }: { score: number | null }) {
         <circle className="orbit-track" cx="180" cy="170" r="104" />
         <circle className="orbit-value" cx="180" cy="170" r="104" pathLength="100" strokeDasharray={`${score ?? 0} ${100 - (score ?? 0)}`} transform="rotate(-90 180 170)" />
       </svg>
-      <div className="orbit-center" role="meter" aria-label="Качество жизни Астаны" aria-valuemin={0} aria-valuemax={100} aria-valuenow={score ?? undefined}>
+      <div className="orbit-center" role="meter" aria-label={t("Качество жизни Астаны")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={score ?? undefined}>
         <BaiterekMark />
         <div className="orbit-score"><strong>{score === null ? '—' : fmt(score)}</strong><span>/ 100</span></div>
-        <small>QUALITY OF LIFE</small>
+        <small>{t("QUALITY OF LIFE")}</small>
       </div>
-      <nav className="orbit-rays" aria-label="Пять направлений управления">
-        {directions.map((decision, index) => <a className={`orbit-ray ray-${index + 1}`} href={`#direction-${decision.id}`} key={decision.id}>{decision.label}</a>)}
+      <nav className="orbit-rays" aria-label={t("Пять направлений управления")}>
+        {directions.map((decision, index) => <a className={`orbit-ray ray-${index + 1}`} href={`#direction-${decision.id}`} key={decision.id}>{t(decision.label)}</a>)}
       </nav>
     </div>
   )
 }
 
 export default function App() {
+  useLanguage()
   const [catalog, setCatalog] = useState<CatalogRead | null>(null)
   const [scenario, setScenario] = useState<ScenarioRead | null>(null)
   const [history, setHistory] = useState<ScenarioRead[]>([])
@@ -189,6 +192,17 @@ export default function App() {
     await save(choices)
   }
 
+  function chooseMapTarget(initiativeId: string, districtId: string) {
+    if (!scenario || scenario.status !== 'draft' || busy) return
+    if (scenario.decisions.some(row => row.initiative_id === initiativeId)) {
+      void execute(async () => {
+        await save(scenario.decisions.map(row => ({ initiative_id: row.initiative_id,
+          district_id: row.initiative_id === initiativeId ? districtId : row.district_id })))
+        setTargets(current => ({ ...current, [initiativeId]: districtId }))
+      })
+    } else setTargets(current => ({ ...current, [initiativeId]: districtId }))
+  }
+
   async function analyze() {
     if (!scenario) return
     const calculation = await api<CalculationRead>(`/scenarios/${scenario.id}/submit`, 'POST', { expected_revision: scenario.revision })
@@ -210,65 +224,67 @@ export default function App() {
       <aside className="nav-rail">
         <div className="brand"><span className="brand-mark">S</span><span>STIKER<span className="brand-accent">AI</span></span></div>
         <AstanaIdentity />
-        <div className="nav-group"><span className="nav-caption">ГОРОД</span><a className="nav-link active" href="#decisions"><span>⌂</span> Обзор</a><a className="nav-link" href="#districts"><span>◉</span> Районы</a><a className="nav-link" href="#decisions"><span>↗</span> Сценарии</a></div>
-        <div className="nav-group"><span className="nav-caption">РАБОЧАЯ СЕССИЯ</span><div className={`session-step ${!result ? 'current' : ''}`}><b>01</b><span>Портфель решений</span></div><div className={`session-step ${result && !frozen ? 'current' : ''}`}><b>02</b><span>Анализ влияния</span></div><div className={`session-step ${frozen ? 'current' : ''}`}><b>03</b><span>Итоговый отчёт</span></div></div>
-        <div className="nav-footer"><span className="status-pulse" /> {error ? 'Ошибка синхронизации' : busy ? 'Синхронизация…' : 'Сервер подключён'}<br /><small>{scenario ? 'Сценарий сохранён на сервере' : 'Начните новый сценарий'}</small></div>
+        <div className="nav-group"><span className="nav-caption">{t("ГОРОД")}</span><a className="nav-link active" href="#decisions"><span>⌂</span>  {t("Обзор")}</a><a className="nav-link" href="#districts"><span>◉</span>  {t("Районы")}</a><a className="nav-link" href="#decisions"><span>↗</span>  {t("Сценарии")}</a></div>
+        <div className="nav-group"><span className="nav-caption">{t("РАБОЧАЯ СЕССИЯ")}</span><div className={`session-step ${!result ? 'current' : ''}`}><b>01</b><span>{t("Портфель решений")}</span></div><div className={`session-step ${result && !frozen ? 'current' : ''}`}><b>02</b><span>{t("Анализ влияния")}</span></div><div className={`session-step ${frozen ? 'current' : ''}`}><b>03</b><span>{t("Итоговый отчёт")}</span></div></div>
+        <div className="nav-footer"><span className="status-pulse" /> {error ? t("Ошибка синхронизации") : busy ? t("Синхронизация…") : t("Сервер подключён")}<br /><small>{scenario ? t("Сценарий сохранён на сервере") : t("Начните новый сценарий")}</small></div>
       </aside>
       <div className="workspace">
-      <header className="topbar"><div className="brand"><span className="brand-mark">S</span><span>STIKER<span className="brand-accent">AI</span></span></div><div className="topbar-meta">ГОРОДСКАЯ ЛАБОРАТОРИЯ · АСТАНА</div></header>
+      <header className="topbar"><div className="brand"><span className="brand-mark">S</span><span>STIKER<span className="brand-accent">AI</span></span></div><div className="topbar-meta">{t("ГОРОДСКАЯ ЛАБОРАТОРИЯ · АСТАНА")}</div><LanguageSwitcher /></header>
       <main className="dashboard" aria-busy={busy}>
-        <section className="intro-row"><div><p className="eyebrow">Астана · Пять направлений. Один город.</p><h1>Аким<br /><em>на 5 часов.</em></h1><p className="intro-copy">Выберите пять инициатив, не более двух из одного направления. {catalog && `Бюджет — ${catalog.dataset.initial_budget} условных единиц. Горизонт расчёта — ${catalog.dataset.horizon_quarters} кварталов.`}</p></div><div className="hero-visual"><BaiterekOrbit score={shown?.final_score ?? null} /><div className="session-card"><span className="card-label">ПОРТФЕЛЬ СЦЕНАРИЯ</span><strong>{String(count).padStart(2, '0')} <small>/ 05</small></strong><span>{frozen ? 'Сценарий завершён' : 'мероприятий выбрано'}</span><div className="mini-progress"><i style={{ width: `${count * 20}%` }} /></div></div></div></section>
-        {error && <div className="error-banner" role="alert">{error}<button onClick={() => window.location.reload()}>Обновить данные</button></div>}
-        {busy && <p role="status" className="loading-message">Синхронизация с сервером…</p>}
-        {!catalog && !busy && <p>Данные пока недоступны. Проверьте запуск API и загрузку датасета.</p>}
+        <section className="intro-row"><div><p className="eyebrow">{t("Астана · Пять направлений. Один город.")}</p><h1>{t("Аким")}<br /><em>{t("на 5 часов.")}</em></h1><p className="intro-copy">{t("Выберите пять инициатив, не более двух из одного направления.")} {catalog && tr`Бюджет — ${catalog.dataset.initial_budget} условных единиц. Горизонт расчёта — ${catalog.dataset.horizon_quarters} кварталов.`}</p></div><div className="hero-visual"><BaiterekOrbit score={shown?.final_score ?? null} /><div className="session-card"><span className="card-label">{t("ПОРТФЕЛЬ СЦЕНАРИЯ")}</span><strong>{String(count).padStart(2, '0')} <small>/ 05</small></strong><span>{frozen ? t("Сценарий завершён") : t("мероприятий выбрано")}</span><div className="mini-progress"><i style={{ width: `${count * 20}%` }} /></div></div></div></section>
+        {error && <div className="error-banner" role="alert">{t(error)}<button onClick={() => window.location.reload()}>{t("Обновить данные")}</button></div>}
+        {busy && <p role="status" className="loading-message">{t("Синхронизация с сервером…")}</p>}
+        {!catalog && !busy && <p>{t("Данные пока недоступны. Проверьте запуск API и загрузку датасета.")}</p>}
         {catalog && <>
-          <section className="session-toolbar" aria-label="Управление сценариями">
-            {!scenario ? <><label>Название команды<input value={teamName} maxLength={120} onChange={e => setTeamName(e.target.value)} /></label><button className="secondary-action" disabled={busy || !teamName.trim()} onClick={() => void execute(() => create())}>Начать сценарий</button></> : <>
-              <label>Мои сценарии<select disabled={busy} value={scenario.id} onChange={e => void execute(() => loadScenario(e.target.value))}>{history.map(row => <option key={row.id} value={row.id}>{row.team_name} · {row.id.slice(0, 6)}</option>)}</select></label>
-              <span className="save-state">{frozen ? 'Результат сохранён' : 'Черновик сохранён'} · {scenario.team_name}</span>
-              <button className="secondary-action" disabled={busy} onClick={() => void execute(() => create(frozen))}>{frozen ? 'Создать копию и изменить' : 'Новый сценарий'}</button>
+          <section className="session-toolbar" aria-label={t("Управление сценариями")}>
+            {!scenario ? <><label>{t("Название команды")}<input value={teamName} maxLength={120} onChange={e => setTeamName(e.target.value)} /></label><button className="secondary-action" disabled={busy || !teamName.trim()} onClick={() => void execute(() => create())}>{t("Начать сценарий")}</button></> : <>
+              <label>{t("Мои сценарии")}<select disabled={busy} value={scenario.id} onChange={e => void execute(() => loadScenario(e.target.value))}>{history.map(row => <option key={row.id} value={row.id}>{row.team_name} · {row.id.slice(0, 6)}</option>)}</select></label>
+              <span className="save-state">{frozen ? t("Результат сохранён") : t("Черновик сохранён")} · {scenario.team_name}</span>
+              <button className="secondary-action" disabled={busy} onClick={() => void execute(() => create(frozen))}>{frozen ? t("Создать копию и изменить") : t("Новый сценарий")}</button>
             </>}
           </section>
-          <section className="metrics-grid" aria-label="Ключевые показатели">
-            <article className="metric-card budget-card"><div className="metric-heading"><span className="card-label">ОБЩИЙ БЮДЖЕТ</span><span className="metric-icon">◈</span></div><strong data-testid="budget">{budget} <small>усл. ед.</small></strong><div className="budget-line"><span>Использовано {spent}</span><span>{budget - spent} осталось</span></div><div className="budget-progress"><i style={{ width: `${spent / budget * 100}%` }} /></div></article>
-            <article className="metric-card score-card"><span className="card-label">ASTANA QUALITY OF LIFE</span><div className="score-value"><strong data-testid="score">{shown ? fmt(shown.final_score) : '—'}</strong></div><div className="score-foot">{result ? `${frozen ? 'Итог' : 'Предварительный расчёт'} · ${delta(result.final_score - result.baseline_score)} к базе` : 'Исходное состояние города'}</div></article>
-            <article className="metric-card signal-card"><span className="card-label">СЛАБЕЙШИЙ РАЙОН</span><strong>{weakest?.name ?? '—'}</strong><p>Критических показателей: {shown?.critical_count ?? '—'}. Порог — строго ниже 40.</p></article>
+          <section className="metrics-grid" aria-label={t("Ключевые показатели")}>
+            <article className="metric-card budget-card"><div className="metric-heading"><span className="card-label">{t("ОБЩИЙ БЮДЖЕТ")}</span><span className="metric-icon">◈</span></div><strong data-testid="budget">{budget} <small>{t("усл. ед.")}</small></strong><div className="budget-line"><span>{t("Использовано")} {spent}</span><span>{budget - spent}  {t("осталось")}</span></div><div className="budget-progress"><i style={{ width: `${spent / budget * 100}%` }} /></div></article>
+            <article className="metric-card score-card"><span className="card-label">{t("ASTANA QUALITY OF LIFE")}</span><div className="score-value"><strong data-testid="score">{shown ? fmt(shown.final_score) : '—'}</strong></div><div className="score-foot">{result ? tr`${frozen ? t("Итог") : t("Предварительный расчёт")} · ${delta(result.final_score - result.baseline_score)} к базе` : t("Исходное состояние города")}</div></article>
+            <article className="metric-card signal-card"><span className="card-label">{t("СЛАБЕЙШИЙ РАЙОН")}</span><strong>{t(weakest?.name ?? '—')}</strong><p>{t("Критических показателей:")} {shown?.critical_count ?? '—'}{t(". Порог — строго ниже 40.")}</p></article>
           </section>
+          <AstanaMap key={catalog.dataset.id} catalog={catalog} result={result} scenario={scenario}
+            targets={targets} busy={busy} onTarget={chooseMapTarget} />
           <div className="content-grid" id="decisions">
-            <section className="decisions-panel"><div className="section-heading"><div><span className="section-kicker">14 ИНИЦИАТИВ · 5 РЕШЕНИЙ</span><h2>Портфель решений</h2></div><span className="lock-note">БЮДЖЕТНЫЙ КОНТРОЛЬ</span></div>
-              {directions.map((direction, index) => <section className="decision-row" id={`direction-${direction.id}`} key={direction.id}><div className="decision-title"><span className="decision-number">0{index + 1}</span><span className="decision-icon">{direction.icon}</span><div><h3>{direction.label}</h3><p>Можно выбрать до двух</p></div></div><div className="option-list">
+            <section className="decisions-panel"><div className="section-heading"><div><span className="section-kicker">{t("14 ИНИЦИАТИВ · 5 РЕШЕНИЙ")}</span><h2>{t("Портфель решений")}</h2></div><span className="lock-note">{t("БЮДЖЕТНЫЙ КОНТРОЛЬ")}</span></div>
+              {directions.map((direction, index) => <section className="decision-row" id={`direction-${direction.id}`} key={direction.id}><div className="decision-title"><span className="decision-number">0{index + 1}</span><span className="decision-icon">{direction.icon}</span><div><h3>{t(direction.label)}</h3><p>{t("Можно выбрать до двух")}</p></div></div><div className="option-list">
                 {catalog.initiatives.filter(item => item.direction === direction.id).sort((a, b) => Number(a.code.slice(1)) - Number(b.code.slice(1))).map(item => {
                   const selected = scenario?.decisions.find(d => d.initiative_id === item.id)
                   return <div className={`initiative-card ${selected ? 'selected' : ''}`} key={item.id}>
-                    <button data-testid={`initiative-${item.code}`} className={`option ${selected ? 'selected' : ''}`} aria-pressed={!!selected} disabled={busy || !scenario || frozen} onClick={() => void execute(() => toggle(item.id))}><span className="radio" /><span className="option-copy"><strong>{item.code} · {item.title}</strong><small>{item.scope === 'city' ? 'Весь город' : 'Один район'} · лаг {item.lag_quarters} кв.</small></span><span className="option-cost">{item.cost} усл. ед.</span></button>
-                    {item.scope === 'district' && <label className="district-target">Район<select data-testid={`district-${item.code}`} aria-label={`Район для ${item.code}`} disabled={busy || !scenario || frozen} value={selected?.district_id ?? targets[item.id] ?? ''} onChange={e => {
+                    <button data-testid={`initiative-${item.code}`} className={`option ${selected ? 'selected' : ''}`} aria-pressed={!!selected} disabled={busy || !scenario || frozen} onClick={() => void execute(() => toggle(item.id))}><span className="radio" /><span className="option-copy"><strong>{item.code} · {t(item.title)}</strong><small>{item.scope === 'city' ? t("Весь город") : t("Один район")}  {t("· лаг")} {item.lag_quarters}  {t("кв.")}</small></span><span className="option-cost">{item.cost}  {t("усл. ед.")}</span></button>
+                    {item.scope === 'district' && <label className="district-target">{t("Район")}<select data-testid={`district-${item.code}`} aria-label={tr`Район для ${item.code}`} disabled={busy || !scenario || frozen} value={selected?.district_id ?? targets[item.id] ?? ''} onChange={e => {
                       const districtId = e.target.value
                       if (selected && scenario) void execute(async () => {
                         await save(scenario.decisions.map(d => ({ initiative_id: d.initiative_id, district_id: d.initiative_id === item.id ? districtId || null : d.district_id })))
                         setTargets(current => ({ ...current, [item.id]: districtId }))
                       })
                       else setTargets(current => ({ ...current, [item.id]: districtId }))
-                    }}><option value="">Выберите район</option>{catalog.districts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}</select></label>}
-                    <details className="effect-details"><summary>Полный эффект</summary>{(Object.keys(metrics) as Metric[]).filter(m => item[m] !== 0).map(m => <p key={m}>{metrics[m]}: {delta(item[m])}</p>)}<p>Реализуется {(catalog.dataset.horizon_quarters - item.lag_quarters) / catalog.dataset.horizon_quarters * 100}% эффекта.</p></details>
+                    }}><option value="">{t("Выберите район")}</option>{catalog.districts.map(d => <option key={d.id} value={d.id}>{t(d.name)}</option>)}</select></label>}
+                    <details className="effect-details"><summary>{t("Полный эффект")}</summary>{(Object.keys(metrics) as Metric[]).filter(m => item[m] !== 0).map(m => <p key={m}>{t(metrics[m])}: {delta(item[m])}</p>)}<p>{t("Реализуется")} {(catalog.dataset.horizon_quarters - item.lag_quarters) / catalog.dataset.horizon_quarters * 100}{t("% эффекта.")}</p></details>
                   </div>
                 })}
               </div></section>)}
-              <div className="decision-footer"><span>Выбрано: <b>{count}</b> из 5</span><span>Расход: <b>{spent} усл. ед.</b></span></div>
+              <div className="decision-footer"><span>{t("Выбрано:")} <b>{count}</b>  {t("из 5")}</span><span>{t("Расход:")} <b>{spent}  {t("усл. ед.")}</b></span></div>
             </section>
-            <aside className="side-panel" id="districts"><div className="section-heading compact"><h2>Пульс районов</h2></div><div className="district-list">{shown?.districts.map(d => <div className="district" key={d.district_id}><div className="district-avatar mint">{d.name[0]}</div><div className="district-info"><strong>{d.name}</strong><span>Взвешенный индекс</span></div><div className="district-score"><strong>{fmt(d.final_score)}</strong><span>{delta(d.final_score - d.baseline_score)}</span></div></div>)}</div>
-              {!frozen && <><button className="primary-action" disabled={busy || !scenario || count !== 5} onClick={() => void execute(analyze)}>Показать анализ сценария <span>→</span></button><p className="action-note">Сохранит итог и зафиксирует пять решений.</p></>}
-              {frozen && <div className="ai-note"><div className="ai-badge">✦ AI</div><div><strong>Объяснение результата</strong>
-                {explanation?.status === 'running' ? <p role="status">AI анализирует рассчитанные показатели…</p> : explanation?.payload ? <><p>{explanation.payload.summary}</p>{(['strengths', 'risks', 'consequences', 'recommendations'] as const).map((key, i) => <section key={key}><h4>{['Сильные стороны', 'Риски', 'Последствия', 'Рекомендации'][i]}</h4><ul>{explanation.payload![key].map((text, j) => <li key={j}>{text}</li>)}</ul></section>)}</> : <><p>{explanation?.error ?? 'Численный результат сохранён. Можно запросить AI-объяснение.'}</p><button className="secondary-action" disabled={busy} onClick={() => void execute(async () => setExplanation(await api<ExplanationRead>(`/scenarios/${scenario!.id}/explanation`, 'POST')))}>Повторить AI-анализ</button></>}
+            <aside className="side-panel" id="districts"><div className="section-heading compact"><h2>{t("Пульс районов")}</h2></div><div className="district-list">{shown?.districts.map(d => <div className="district" key={d.district_id}><div className="district-avatar mint">{d.name[0]}</div><div className="district-info"><strong>{t(d.name)}</strong><span>{t("Взвешенный индекс")}</span></div><div className="district-score"><strong>{fmt(d.final_score)}</strong><span>{delta(d.final_score - d.baseline_score)}</span></div></div>)}</div>
+              {!frozen && <><button className="primary-action" disabled={busy || !scenario || count !== 5} onClick={() => void execute(analyze)}>{t("Показать анализ сценария")} <span>→</span></button><p className="action-note">{t("Сохранит итог и зафиксирует пять решений.")}</p></>}
+              {frozen && <div className="ai-note"><div className="ai-badge">✦ AI</div><div><strong>{t("Объяснение результата")}</strong><p className="source-language-note">{t("Тексты источников и AI-ответы показаны на языке оригинала.")}</p>
+                {explanation?.status === 'running' ? <p role="status">{t("AI анализирует рассчитанные показатели…")}</p> : explanation?.payload ? <><p>{explanation.payload.summary}</p>{(['strengths', 'risks', 'consequences', 'recommendations'] as const).map((key, i) => <section key={key}><h4>{[t("Сильные стороны"), t("Риски"), t("Последствия"), t("Рекомендации")][i]}</h4><ul>{explanation.payload![key].map((text, j) => <li key={j}>{text}</li>)}</ul></section>)}</> : <><p>{t(explanation?.error ?? t("Численный результат сохранён. Можно запросить AI-объяснение."))}</p><button className="secondary-action" disabled={busy} onClick={() => void execute(async () => setExplanation(await api<ExplanationRead>(`/scenarios/${scenario!.id}/explanation`, 'POST')))}>{t("Повторить AI-анализ")}</button></>}
               </div></div>}
             </aside>
           </div>
-          {shown && <section className="results-panel"><div className="section-heading"><h2>Показатели районов {frozen ? 'после решений' : result ? '· предварительный расчёт' : '· исходные данные'}</h2></div><p>Все показатели от 0 до 100; выше — лучше. Изменение указано в пунктах.</p><div className="table-scroll"><table><thead><tr><th>Показатель</th>{shown.districts.map(d => <th key={d.district_id}>{d.name}</th>)}</tr></thead><tbody>{(Object.keys(metrics) as Metric[]).map(m => <tr key={m}><th>{metrics[m]}</th>{shown.districts.map(d => <td className={d.after[m] < 40 ? 'critical' : ''} key={d.district_id}>{fmt(d.after[m])}<small>{delta(d.after[m] - d.before[m])}</small></td>)}</tr>)}</tbody></table></div>
-            {!!result?.contributions.length && <details className="contributions"><summary>Эффекты мероприятий и синергий</summary><p>Добавки после учёта лагов, до ограничения показателей диапазоном 0–100.</p>{result.contributions.map((entry, index) => <p key={index}><strong>{entry.label}</strong> · {catalog.districts.find(d => d.id === entry.district_id)?.name}: {Object.entries(entry.effects).map(([key, value]) => `${key.toUpperCase()} ${delta(value!)}`).join(', ')}</p>)}</details>}
+          {shown && <section className="results-panel"><div className="section-heading"><h2>{t("Показатели районов")} {frozen ? t("после решений") : result ? t("· предварительный расчёт") : t("· исходные данные")}</h2></div><p>{t("Все показатели от 0 до 100; выше — лучше. Изменение указано в пунктах.")}</p><div className="table-scroll"><table><thead><tr><th>{t("Показатель")}</th>{shown.districts.map(d => <th key={d.district_id}>{t(d.name)}</th>)}</tr></thead><tbody>{(Object.keys(metrics) as Metric[]).map(m => <tr key={m}><th>{t(metrics[m])}</th>{shown.districts.map(d => <td className={d.after[m] < 40 ? 'critical' : ''} key={d.district_id}>{fmt(d.after[m])}<small>{delta(d.after[m] - d.before[m])}</small></td>)}</tr>)}</tbody></table></div>
+            {!!result?.contributions.length && <details className="contributions"><summary>{t("Эффекты мероприятий и синергий")}</summary><p>{t("Добавки после учёта лагов, до ограничения показателей диапазоном 0–100.")}</p>{result.contributions.map((entry, index) => <p key={index}><strong>{t(entry.label)}</strong> · {t(catalog.districts.find(d => d.id === entry.district_id)?.name)}: {Object.entries(entry.effects).map(([key, value]) => `${key.toUpperCase()} ${delta(value!)}`).join(', ')}</p>)}</details>}
           </section>}
         </>}
       <PublicSignalsPanel />
         <CityLiveView />
-      </main><footer className="footer"><span>STIKERAI · ГОРОДСКАЯ ЛАБОРАТОРИЯ</span><span>Данные синтетические · Учебная симуляция</span></footer></div>
+      </main><footer className="footer"><span>{t("STIKERAI · ГОРОДСКАЯ ЛАБОРАТОРИЯ")}</span><span>{t("Данные синтетические · Учебная симуляция")}</span></footer></div>
     </div>
   )
 }
