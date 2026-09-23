@@ -26,6 +26,8 @@ services:
       PGPASSWORD: ${POSTGRES_PASSWORD:-stikerai}
       PGDATABASE: ${POSTGRES_DB:-stikerai}
     command: ["python", "-m", "alembic", "upgrade", "head"]
+    volumes:
+      - ./backend/migrations:/app/migrations:ro
     depends_on:
       db:
         condition: service_healthy
@@ -46,6 +48,8 @@ services:
     volumes:
       - ./backend/app:/app/app
       - ./backend/tests:/app/tests
+      - ./backend/migrations:/app/migrations:ro
+      - ./backend/data:/app/data:ro
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3)"]
       interval: 10s
