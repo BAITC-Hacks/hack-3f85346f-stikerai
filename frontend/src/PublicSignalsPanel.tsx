@@ -99,7 +99,7 @@ function normalizeProposal(value: unknown, index: number, detailValue?: unknown)
   if (suppression.threshold !== undefined) coverage.unshift(`Подавление малых групп: порог ${suppression.threshold}`)
   if (typeof provenance.description === 'string') coverage.push(provenance.description)
   if (typeof provenance.collection_method === 'string') coverage.push(provenance.collection_method)
-  if (typeof provenance.source_id === 'string') sources.push({ label: `Источник: ${provenance.source_id}` })
+  if (typeof provenance.source_id === 'string') sources.push({ label: `Источник: ${provenance.source_id}`, url: undefined })
   const title = first(row, ['title', 'name', 'proposal', 'label'])
   const description = first(row, ['summary', 'description', 'short_description'])
   return {

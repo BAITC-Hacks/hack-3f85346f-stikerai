@@ -14,12 +14,12 @@ Python-модели: `backend/app/models.py`, API-схемы: `backend/app/schem
 docker compose up --build
 ```
 
-Compose автоматически поднимает PostgreSQL и применяет миграции Alembic перед
-запуском backend. Для демонстрационного датасета выполните:
-
-```sh
-docker compose exec backend python -m app.seed
-```
+Compose автоматически поднимает PostgreSQL, применяет миграции, загружает
+демонстрационный набор `astana-v1` и только затем запускает backend. Для AI
+объяснения скопируйте `.env.example` в `.env` и задайте `OPENAI_API_KEY`;
+ключ передаётся только backend и не требуется для детерминированного preview.
+Без ключа AI-анализ вернёт понятную ошибку конфигурации, а результат preview
+останется доступен.
 
 Данные PostgreSQL сохраняются в Docker volume `postgres_data`.
 
@@ -33,6 +33,22 @@ docker compose exec backend python -m app.seed
 После изменения зависимостей повторите запуск с `--build`.
 Для настройки портов скопируйте `.env.example` в `.env`.
 Compose предназначен для локальной разработки.
+
+## Сценарий симуляции
+
+Выберите пять разных инициатив каталога DataDoc и назначьте район для каждой
+районной инициативы. Общий бюджет и ограничения проверяет backend. Кнопка
+«Рассчитать сценарий» возвращает детерминированный preview без вызова AI;
+«Получить AI-анализ» отправляет рассчитанный результат в OpenAI Responses API
+для объяснения сильных сторон, рисков, последствий и рекомендаций. Модель
+объяснения не выставляет и не меняет балл.
+
+API для интеграции агента/тестовой среды: `GET /api/datasets/current`,
+`POST /api/scenarios`, `PUT /api/scenarios/{id}/decisions`,
+`POST /api/scenarios/{id}/preview`, `POST /api/scenarios/{id}/submit` и
+`POST /api/scenarios/{id}/evaluate`. Полный контракт доступен в Swagger.
+Параметры OpenAI и безопасная проверка наличия ключа описаны в
+[`docs/openai-evaluation.md`](docs/openai-evaluation.md).
 
 Блок «Предложения жителей» использует вымышленные агрегаты для демонстрации
 интерфейса и подавления малых групп. Это не реальные сообщения и не опрос.
