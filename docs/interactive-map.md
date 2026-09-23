@@ -1,11 +1,10 @@
 # Interactive Astana map
 
-The command center at `/` includes the geographic map on its Command center and
-Districts screens. The Russian/Kazakh simulator is available at `/simulator`;
-workspace links connect both interfaces. They share the session and saved
-scenario, so selected initiatives and target districts survive navigation.
-Each workspace loads its own global styles. The command center retains its
-English civic interface; the simulator retains its Russian/Kazakh language switch.
+The command center at `/` includes the geographic map on its Command center,
+Districts and Simulator screens. `/simulator` opens the integrated simulator in
+the same Akim workspace. Navigation keeps the active scenario, selected measures
+and district targets. The previous Russian/Kazakh workspace remains available at
+`/legacy-simulator`; it shares the saved scenario but loads its own styles.
 
 The first map release adds MapLibre to the existing React application. Open
 «Районы Астаны» above the initiative portfolio, then «Открыть карту». The renderer

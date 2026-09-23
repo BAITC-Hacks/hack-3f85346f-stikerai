@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test'
 test.use({ locale: 'kk-KZ' })
 
 test('Russian default; switching preserves decisions and survives reload', async ({ page }) => {
-  await page.goto('/simulator')
+  await page.goto('/legacy-simulator')
   await expect(page.locator('html')).toHaveAttribute('lang', 'ru')
   await page.getByRole('button', { name: 'Начать сценарий', exact: true }).click()
   const district = page.getByTestId('district-M7')
@@ -31,7 +31,7 @@ test('Russian default; switching preserves decisions and survives reload', async
 test('unsupported stored language falls back to Russian and switch works on mobile', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.addInitScript(() => localStorage.setItem('stikerai.language', 'en'))
-  await page.goto('/simulator')
+  await page.goto('/legacy-simulator')
   await expect(page.locator('html')).toHaveAttribute('lang', 'ru')
   await page.getByRole('button', { name: 'Қазақша', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Сценарийді бастау', exact: true })).toBeVisible()
@@ -42,7 +42,7 @@ test('language switch tolerates unavailable localStorage', async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(window, 'localStorage', { get() { throw new Error('Storage blocked') } })
   })
-  await page.goto('/simulator')
+  await page.goto('/legacy-simulator')
   await expect(page.locator('html')).toHaveAttribute('lang', 'ru')
   await page.getByRole('button', { name: 'Қазақша', exact: true }).click()
   await expect(page.locator('html')).toHaveAttribute('lang', 'kk')

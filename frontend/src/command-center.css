@@ -22,3 +22,37 @@
 .source-context .public-signals-panel{border-color:var(--line)}.source-context .public-signals-heading h2,.source-context .city-live-heading h2{font-family:inherit;font-weight:550;font-size:23px;color:#536f90}.source-context .public-proposal-card,.source-context .city-live-view{background:#fff;border-color:var(--line);border-radius:18px}.source-context .public-signals-notice{background:#f1f6fc;border-color:#8eb3dd;color:#7690ae;border-radius:8px}.source-context .public-signals-notice strong{color:#5d7ea5}.source-context .public-signals-refresh,.source-context .city-live-load,.source-context .city-live-close{background:#edf4fd;color:#5b83b0;border:1px solid #dce8f6;border-radius:8px}.source-context .section-kicker{font-size:8px;letter-spacing:.1em;color:#91a1b6}.source-context .public-proposal-meta a,.source-context .city-live-heading a{color:#6790bd}.source-context .public-proposal-breakdowns{border-color:var(--line)}
 
 .workspace-link { display: inline-block; color: #176cf5; font-size: 12px; font-weight: 600; padding: 10px 0; text-underline-offset: 3px; }
+
+/* The simulator uses the same cards, colors and controls as the Akim workspace. */
+.simulator-workspace { min-width: 0; }
+.simulator-workspace > .workbench { margin-top: 0; }
+.simulator-workspace .scenario-toolbar { align-items: flex-end; flex-wrap: wrap; }
+.simulator-workspace .scenario-toolbar label { flex: 1 1 190px; }
+.simulator-workspace .scenario-toolbar .budget-meter { flex: 0 0 170px; }
+.simulator-workspace .standalone-score { background: linear-gradient(115deg, #fff, #f0f6ff); }
+.simulator-workspace .decision-section { scroll-margin-top: 110px; }
+.simulator-workspace .simulation-bar { gap: 20px; }
+.simulator-workspace .simulation-bar > .btn { flex-shrink: 0; }
+.simulator-comparison { margin-top: 26px; }
+.simulator-comparison > .muted { margin: 16px 0 0; font-size: 12px; }
+.simulator-comparison .section-title { align-items: flex-start; }
+.simulator-comparison .section-title > .badge { flex-shrink: 0; }
+.simulator-comparison .table-scroll { border: 1px solid var(--line); border-radius: 12px; }
+.simulator-comparison table { font-variant-numeric: tabular-nums; }
+.simulator-comparison caption { padding: 14px; text-align: left; font-size: 11px; color: var(--muted); background: #f8fafd; }
+.simulator-comparison th { background: #f4f7fb; }
+.simulator-comparison th:first-child { position: sticky; left: 0; z-index: 1; min-width: 160px; box-shadow: 1px 0 var(--line); }
+.simulator-comparison tbody th { background: #fff; }
+.simulator-comparison td { min-width: 140px; color: #536f90; }
+.simulator-comparison td strong { color: var(--navy); font-weight: 600; }
+.simulator-comparison td.critical-cell { background: #fff4f1; color: #a9594a; }
+.simulator-comparison td small.negative { color: var(--red); }
+.simulator-comparison .notice { margin-top: 18px; }
+@media (max-width: 760px) {
+  .simulator-workspace .scenario-toolbar label { flex-basis: 100%; }
+  .simulator-workspace .scenario-toolbar .budget-meter { flex-basis: 100%; }
+  .simulator-workspace .simulation-bar { position: static; }
+  .simulator-comparison .section-title { flex-direction: column; gap: 12px; }
+  .simulator-comparison th:first-child { min-width: 130px; max-width: 155px; white-space: normal; }
+  .simulator-comparison td { min-width: 130px; }
+}

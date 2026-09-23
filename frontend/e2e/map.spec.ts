@@ -4,7 +4,7 @@ import type { CatalogRead, MapDistrictCollection } from '../src/types/domain'
 
 test('map: geometry loads without external tiles; unmatched districts remain neutral', async ({ page }, testInfo) => {
   await page.route('https://**/*', route => route.abort())
-  await page.goto('/simulator')
+  await page.goto('/legacy-simulator')
   await page.getByRole('button', { name: 'Открыть карту', exact: true }).click()
   const map = page.getByRole('region', { name: 'Районы Астаны', exact: true })
   await expect(map.getByTestId('astana-map-canvas')).toHaveAttribute('data-ready', 'true', { timeout: 20000 })
@@ -32,7 +32,7 @@ test('map: geometry loads without external tiles; unmatched districts remain neu
 })
 
 test('map: assign a district, preserve saved choices, and compare server results', async ({ page }) => {
-  await page.goto('/simulator')
+  await page.goto('/legacy-simulator')
   await page.getByRole('button', { name: 'Начать сценарий', exact: true }).click()
   await page.getByRole('button', { name: 'Открыть карту', exact: true }).click()
   const map = page.getByRole('region', { name: 'Районы Астаны', exact: true })

@@ -16,7 +16,7 @@ const russian: Record<string, string> = {
 export const locale = () => language === 'kk' ? 'kk-KZ' : 'ru-RU'
 
 function updateDocument() {
-  if (window.location.pathname.replace(/\/+$/, '') !== '/simulator') {
+  if (window.location.pathname.replace(/\/+$/, '') !== '/legacy-simulator') {
     document.documentElement.lang = 'en'
     return
   }
