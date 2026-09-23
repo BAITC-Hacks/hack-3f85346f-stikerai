@@ -242,3 +242,25 @@ class ScenarioPreviewRead(Contract):
     projected_score: CityScore
     score_delta: float
     districts: list[DistrictPreviewRead]
+
+
+class CivicSupport(Contract):
+    code: Annotated[str, Field(pattern=r"^M([1-9]|1[0-4])$")]
+    support: Indicator
+
+
+class CivicDistrictSignal(Contract):
+    district: Literal['esil', 'almaty', 'saryarka', 'baikonur', 'nura']
+    priority: Direction
+    signals: Annotated[int, Field(ge=0, le=10000000, strict=True)]
+    satisfaction: Indicator
+    petition_signatures: Annotated[int, Field(ge=0, le=10000000, strict=True)]
+
+
+class CivicContext(Contract):
+    """Bounded fictional advisory snapshot; never an input to calculation or validation."""
+    source: Literal['fictional_local_demo']
+    alignment: Indicator
+    community_funding: Money
+    selected_support: Annotated[list[CivicSupport], Field(max_length=5)]
+    districts: Annotated[list[CivicDistrictSignal], Field(max_length=5)]

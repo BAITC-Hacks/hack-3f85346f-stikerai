@@ -28,6 +28,27 @@ export type CatalogRead = {
   baseline: CalculationRead
 }
 
+export type CivicContext = {
+  source: string
+  alignment: number
+  community_funding: number
+  selected_support: Array<CivicSupport>
+  districts: Array<CivicDistrictSignal>
+}
+
+export type CivicDistrictSignal = {
+  district: "esil" | "almaty" | "saryarka" | "baikonur" | "nura"
+  priority: Direction
+  signals: number
+  satisfaction: number
+  petition_signatures: number
+}
+
+export type CivicSupport = {
+  code: string
+  support: number
+}
+
 export type CopyRequest = {
   request_id: string
 }

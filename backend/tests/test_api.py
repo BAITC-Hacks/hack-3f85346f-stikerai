@@ -193,3 +193,25 @@ def test_structured_provider_contract(monkeypatch):
         assert body['store'] is False
         return httpx.Response(200, json={"status": "completed", "output": [{"type": "message", "content": [{"type": "output_text", "text": output.model_dump_json()}]}]})
     assert llm.request_explanation({"score": 56.54}, transport=httpx.MockTransport(handler)) == output
+
+
+def test_civic_context_only_reaches_explanation_never_score(client, monkeypatch):
+    url, original = completed(client)
+    monkeypatch.setenv('OPENAI_API_KEY', 'fake-test-key')
+    monkeypatch.setenv('OPENAI_MODEL', 'test-model')
+    captured = []
+    def provider(payload):
+        captured.append(payload)
+        return ExplanationText(summary='Civic context explained', strengths=[], risks=[], consequences=[], recommendations=[])
+    monkeypatch.setattr(llm, 'request_explanation', provider)
+    civic = {
+        'source': 'fictional_local_demo', 'alignment': 85.8, 'community_funding': 36440000,
+        'selected_support': [{'code': 'M7', 'support': 91}],
+        'districts': [{'district': 'nura', 'priority': 'social', 'signals': 3481, 'satisfaction': 63, 'petition_signatures': 2640}],
+    }
+    assert client.post(url + '/explanation', json={**civic, 'final_score': 99}).status_code == 422
+    assert client.post(url + '/explanation', json={**civic, 'alignment': 101}).status_code == 422
+    assert client.post(url + '/explanation', json=civic).status_code == 200
+    assert captured[0]['citizen_context'] == civic
+    assert captured[0]['final_score'] == original['final_score']
+    assert client.get(url + '/result').json() == original

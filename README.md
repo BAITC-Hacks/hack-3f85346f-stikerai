@@ -284,3 +284,66 @@ Explanation. Сохранение решений и submit требуют `expec
 См. также [карту источников](docs/enrichment/civic-evidence-map.md),
 [исследование общественных сигналов](docs/enrichment/public-signals/README.md)
 и [настройку AI-адаптеров](docs/openai-evaluation.md).
+
+## ASTANA // Command Center + Citizen Participation
+
+The command-center refactor preserves the existing dataset, validation, deterministic Python scoring engine, persistent scenario APIs, and original browser regression tests. The frontend continues to use React, TypeScript and Vite; Lucide supplies the navigation icons. No external map service or payment provider is needed.
+
+### Local demo
+
+```sh
+docker compose up --build -d --wait
+```
+
+Open **http://localhost:5173**. Compose runs migrations and the idempotent dataset seed before starting the backend. Development containers mount current migrations and data read-only. Optional AI credentials stay in root `.env` and are read only by the backend.
+
+1. Choose **Enter Command Center**. The baseline is **52.56**; click **Nura** to inspect its schools and healthcare.
+2. Open **Listen to the city** to compare city indicators with fictional resident priorities.
+3. Select **M7 → Nura**, **M8 → Nura**, **M10 → Nura**, **M12 → Citywide**, and **M5 → Saryarka**. Cost: **95**; calculated score: **56.54307**.
+4. Run **Simulate 2 years**. Review city impact, citizen alignment and community resources separately. Live AI is optional; deterministic advisory cards remain available without it.
+5. Switch to **Citizen workspace**. Sign a petition, vote, allocate 10 citizen points, report/confirm an issue, propose an idea, or make a **simulated** contribution.
+6. Return to the command center. Signatures, confirmations, funding and your activity feed share the same local state. The official score does not change.
+7. Press **Cmd/Ctrl + K** for the command palette. **Astana Open** gives a simplified public view. **Simulation settings** contains configurable fictional petition milestones and a confirmation-protected civic reset.
+
+### Data boundaries
+
+- **Official city impact:** the unchanged server-side engine alone computes scores and validates government plans. Citizen actions never enter its inputs. Baseline and valid five-decision previews are labelled; results are saved by the existing scenario workflow.
+- **Citizen alignment:** arithmetic mean of the fixed fictional support percentages for selected initiatives. An empty selection has no alignment value. This is advisory, not predicted satisfaction.
+- **Community resources:** sum of raised amounts in related community projects, matched to the selected initiative and district (or citywide scope), counted once per project. Tenge is never added to the virtual government budget. Civic-idea pledges remain separate from funded-project totals.
+- **Civic participation:** fictional fixtures in `frontend/src/data/{citizens,petitions,crowdfunding,issues,votes}.ts`, with one mock resident per browser profile. Votes, signatures and confirmations are idempotent; repeat demo contributions are allowed. State persists under `astana.civic.v1` in localStorage. An unavailable/full storage warning means the current session still works but persistence may fail.
+- **Petitions:** milestones are labelled **Demo simulation thresholds** and have no legal or administrative effect. A milestone does not automatically mark a petition accepted or implemented.
+- **Funding:** no real transactions, payment details or real organizer verification. Images are local optional report attachments (PNG/JPEG/WebP, up to 1 MB); project art is SVG/CSS.
+- **AI explanation:** receives saved numerical results and a bounded, explicitly fictional civic snapshot. Extra score fields in civic context are rejected. The snapshot is explanatory only and cannot alter saved calculations. The existing asynchronous provider, retry and session ownership logic is retained. Live local civic summaries can change after later participation; provider output is labelled as a snapshot at simulation time.
+- **Upstream civic evidence:** the original aggregated public-signal panels and opt-in city broadcast remain available beneath the command-center scenario controls. The broadcast is never loaded automatically.
+
+```mermaid
+flowchart LR
+  A[Government decisions] --> V[Existing scenario validator]
+  V --> E[Existing deterministic engine]
+  E --> R[Saved official results]
+  C[Local fictional citizen activity] --> P[Astana Pulse / district context]
+  C --> X[Separate alignment and funding summaries]
+  R --> AI[Optional AI explanation]
+  C -->|Bounded advisory snapshot only| AI
+  R --> UI[Command Center and results]
+  X --> UI
+  P --> UI
+```
+
+### QA
+
+```sh
+cd backend
+.venv/bin/python -m pytest -q
+.venv/bin/python scripts/export_types.py --check
+cd ../frontend
+npm ci
+npm run build
+PATH="$PWD/../backend/.venv/bin:$PATH" npm run test:e2e
+```
+
+`npm run build` fetches and checks all remote branches first. Browser tests use isolated SQLite and local servers, with live AI disabled. Existing tests retain the 52.56 baseline, 56.54 reference scenario, invalid-plan rejection, persistence, copy/retry, source aggregation and mobile coverage. Civic QA covers cross-workspace updates, persistence, duplicate protection, the ten-point cap, local submissions, fictional thresholds, keyboard navigation and desktop/tablet/mobile overflow. Backend coverage verifies that civic context reaches the explanation provider without changing the official result.
+
+### Prototype limits
+
+Citizen records are local to one browser, not shared between actual residents. Project verification, participation counts, trends, map boundaries and funding are fictional. The timer is narrative and imposes no expiry penalty. Live AI requires optional server configuration; the core simulator and civic experience work locally with the Compose stack. Next steps are authenticated shared civic storage, moderation, audited public responses, real GIS boundaries, accessibility research and deployment hardening. Real payments require a separate, explicitly configured implementation.

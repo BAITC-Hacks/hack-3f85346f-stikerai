@@ -26,7 +26,7 @@ export default function App() {
   useEffect(() => { const handler = (e: KeyboardEvent) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setPalette(v => !v); setSearch('') } }; window.addEventListener('keydown', handler); return () => { window.removeEventListener('keydown', handler); clearTimeout(toastTimer.current) } }, [])
   useEffect(() => { if (page === 'landing') return; const timer = setInterval(() => setClock(n => Math.max(0, n - 1)), 1000); return () => clearInterval(timer) }, [page === 'landing'])
   const notify = (text: string) => { setToast(text); clearTimeout(toastTimer.current); toastTimer.current = setTimeout(() => setToast(''), 5000) }
-  const navigate = (next: string) => { setPage(next); setPalette(false); setListen(false); window.scrollTo({ top: 0, behavior: 'instant' }); requestAnimationFrame(() => titleRef.current?.focus()) }
+  const navigate = (next: string) => { setPage(next); setPalette(false); setListen(false); window.scrollTo({ top: 0, behavior: 'instant' }); requestAnimationFrame(() => { window.scrollTo({ top: 0, behavior: 'instant' }); titleRef.current?.focus({ preventScroll: true }) }) }
   const enter = (citizen = false) => { try { localStorage.setItem('astana.entered', 'true') } catch { /* optional persistence */ }; setMode(citizen ? 'citizen' : 'government'); navigate(citizen ? 'home' : 'command'); if (!citizen && !sim.scenario && sim.catalog && !sim.busy) void sim.execute(() => sim.create()) }
   const consider = (code: string, target: DistrictCode) => { const item = sim.catalog?.initiatives.find(i => i.code === code); const d = sim.catalog?.districts.find(d => d.code === target); setDistrict(target); setMode('government'); if (item && d && item.scope === 'district') sim.setTargets(s => ({ ...s, [item.id]: d.id })); navigate('decisions'); requestAnimationFrame(() => { if (item) document.getElementById(`direction-${item.direction}`)?.scrollIntoView({ behavior: 'smooth' }) }); notify('District preselected. Review the initiative before adding it to your scenario.') }
   async function runSimulation() {
@@ -40,6 +40,8 @@ export default function App() {
   const summary = civicSummary(civic, sim.catalog, sim.scenario)
   const clockText = [Math.floor(clock / 3600), Math.floor(clock % 3600 / 60), clock % 60].map(n => String(n).padStart(2, '0')).join(':')
   const commands = [
+    { label: 'Enter citizen workspace', detail: 'Report, vote, petition and support', action: () => { setMode('citizen'); navigate('home') } },
+    { label: 'Enter Akim workspace', detail: 'Government command center', action: () => { setMode('government'); navigate('command') } },
     { label: 'Go to Nura', detail: 'District intelligence', action: () => { setDistrict('nura'); navigate('districts') } },
     { label: 'View critical indicators', detail: 'Command center', action: () => navigate('command') },
     { label: 'Open petitions', detail: 'Citizen participation', action: () => navigate('petitions') },

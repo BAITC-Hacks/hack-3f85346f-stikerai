@@ -13,7 +13,7 @@ from app.db import get_session
 from app.domain import ScenarioStatus
 from app.models import Calculation, Dataset, Decision, District, Explanation, Initiative, InitiativeRule, Scenario
 from app.schemas import (
-    CalculationRead, CatalogRead, CopyRequest, DatasetRead, DecisionRead, DecisionSelect,
+    CalculationRead, CatalogRead, CivicContext, CopyRequest, DatasetRead, DecisionRead, DecisionSelect,
     DistrictRead, ExplanationRead, InitiativeRead, InitiativeRuleRead, PlanSave,
     RevisionRequest, ScenarioRead, ScenarioStart,
 )
@@ -228,7 +228,7 @@ def run_explanation(engine, explanation_id, attempt_id, payload):
 
 
 @router.post("/scenarios/{scenario_id}/explanation", response_model=ExplanationRead, dependencies=[Depends(write_guard)])
-def explain(scenario_id: UUID, tasks: BackgroundTasks, owner_hash: str = Depends(owner), session: Session = Depends(get_session)):
+def explain(scenario_id: UUID, tasks: BackgroundTasks, owner_hash: str = Depends(owner), session: Session = Depends(get_session), civic_context: CivicContext | None = None):
     with session.begin():
         calculation, row = explanation_row(session, scenario_id, owner_hash, lock=True)
         if row.status == "completed" or (row.status == "running" and not expired(row)):
@@ -239,5 +239,8 @@ def explain(scenario_id: UUID, tasks: BackgroundTasks, owner_hash: str = Depends
         row.status, row.error, row.started_at = "running", None, datetime.now(timezone.utc)
         row.attempt_id, row.model, row.prompt_version = uuid4(), os.environ["OPENAI_MODEL"], llm.PROMPT_VERSION
         session.flush()
-        tasks.add_task(run_explanation, session.get_bind(), row.id, row.attempt_id, calculation.payload)
+        payload = dict(calculation.payload)
+        if civic_context is not None:
+            payload["citizen_context"] = civic_context.model_dump(mode="json")
+        tasks.add_task(run_explanation, session.get_bind(), row.id, row.attempt_id, payload)
         return explanation_view(row)
