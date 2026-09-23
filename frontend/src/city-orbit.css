@@ -1,0 +1,51 @@
+:root { --astana-blue: #087eaf; --astana-gold: #c89d38; }
+.hero-visual { display: flex; align-items: center; gap: 20px; min-width: 0; }
+.baiterek-orbit { position: relative; width: 360px; height: 340px; flex: 0 0 360px; display: grid; place-items: center; }
+.orbit-drawing { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.orbit-spoke { stroke: var(--astana-gold); stroke-width: 2; }
+.orbit-track, .orbit-value { fill: none; stroke-width: 7; }
+.orbit-track { stroke: #e1edf2; }
+.orbit-value { stroke: var(--astana-gold); stroke-linecap: round; transition: stroke-dasharray .4s ease; }
+.orbit-center { width: 190px; height: 190px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; background: radial-gradient(circle at 50% 20%, #fff, #e7f5fc); border: 1px solid #c9e4ef; box-shadow: 0 0 0 16px #0784b508; }
+.orbit-center svg { width: 58px; height: 82px; }
+.baiterek-trunk, .baiterek-branches, .baiterek-base { fill: none; stroke: var(--astana-blue); stroke-linecap: round; stroke-linejoin: round; stroke-width: 3; }
+.baiterek-sphere { fill: var(--astana-gold); }
+.orbit-score { display: flex; align-items: baseline; gap: 5px; color: #173c51; }
+.orbit-score strong { font: 600 32px/1 'SF Mono', monospace; }
+.orbit-score span { font-size: 11px; color: #53768a; }
+.orbit-center small { color: #53768a; font: 600 8px/1.5 'SF Mono', monospace; letter-spacing: .12em; }
+.orbit-rays { position: absolute; inset: 0; }
+.orbit-ray { position: absolute; z-index: 2; padding: 7px 10px; border: 1px solid #dec68c; border-radius: 20px; background: #fffcf4; color: #745815; font-size: 11px; font-weight: 600; text-decoration: none; box-shadow: 0 4px 12px #36566909; }
+.orbit-ray:hover { background: #f8e9bc; }
+.orbit-ray:focus-visible { outline: 3px solid var(--astana-blue); outline-offset: 4px; }
+.ray-1 { top: 9px; left: 50%; transform: translateX(-50%); }
+.ray-2 { top: 112px; right: 0; }
+.ray-3 { bottom: 28px; right: 44px; }
+.ray-4 { bottom: 28px; left: 22px; }
+.ray-5 { top: 112px; left: 0; }
+.astana-symbol { width: 46px; height: 56px; display: grid; place-items: center; border: 1px solid #dec68c; border-radius: 24px 24px 8px 8px; background: #eff8fc; flex-shrink: 0; }
+.astana-symbol svg { width: 31px; height: 43px; }
+.astana-identity { grid-template-columns: 46px 1fr; gap: 12px; }
+.intro-row h1 { text-transform: none; letter-spacing: -.055em; }
+.intro-row h1 em, .workspace .decision-icon { color: var(--astana-blue); }
+.budget-card { background: #103c58; border-color: #103c58; }
+.metric-icon { color: #efce78; }
+.score-card { background: #fff8e7; border-color: #e4cf9e; }
+.score-card .card-label, .score-change, .score-value span, .score-foot { color: #796023; }
+.score-ring { border-color: var(--astana-gold); }
+.live-dot, .status-pulse { background: var(--astana-gold); box-shadow: 0 0 8px #c89d3833; }
+.nav-footer, .signal-live, .district-score span { color: #87691f; }
+.mini-progress i, .budget-progress i { background: var(--astana-gold); box-shadow: none; }
+.workspace .option.selected { border-color: var(--astana-blue); background: #e8f5fc; box-shadow: 0 0 0 1px var(--astana-blue); }
+.workspace .selected .radio { border-color: var(--astana-gold); background: var(--astana-gold); }
+.primary-action { background: var(--astana-blue); }
+.decision-row { scroll-margin-top: 90px; }
+.decision-row:target { background: #e8f5fc80; }
+.intro-row > div:first-child { min-width: 0; }
+.hero-visual .session-card { min-width: 150px; }
+@media (max-width: 1400px) { .hero-visual { flex-direction: column; gap: 16px; }.hero-visual .session-card { align-self: center; } }
+@media (max-width: 720px) { .hero-visual { width: 100%; margin-top: 24px; }.baiterek-orbit { width: 320px; height: 302px; flex-basis: 302px; }.orbit-center { width: 168px; height: 168px; }.orbit-center svg { height: 68px; }.ray-2, .ray-5 { top: 98px; }.ray-3 { bottom: 20px; right: 30px; }.ray-4 { bottom: 20px; left: 10px; } }
+@media (prefers-reduced-motion: reduce) { .orbit-value { transition: none; } }
+
+@media (max-width: 1050px) { .intro-row { flex-direction: column; align-items: stretch; }.hero-visual { flex-direction: row; justify-content: center; flex-wrap: wrap; } }
+@media (max-width: 380px) { .baiterek-orbit { margin-inline: -12px; }.orbit-ray { font-size: 10px; padding-inline: 7px; } }
